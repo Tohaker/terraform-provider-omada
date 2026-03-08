@@ -67,11 +67,11 @@ func GetAccessToken(cfg ClientConfig) (string, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Authorization returned status %d and error code %d: %s", res.StatusCode, response.ErrorCode, response.Message)
+		return "", fmt.Errorf("authorization returned status %d and error code %d: %s", res.StatusCode, response.ErrorCode, response.Message)
 	}
 
 	if response.Result == nil {
-		return "", fmt.Errorf("No Result was returned from the API, something else may be wrong")
+		return "", fmt.Errorf("no Result was returned from the API, something else may be wrong")
 	}
 
 	return response.Result.AccessToken, nil
@@ -79,7 +79,7 @@ func GetAccessToken(cfg ClientConfig) (string, error) {
 
 func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.Host == "" {
-		return nil, fmt.Errorf("Missing Host")
+		return nil, fmt.Errorf("missing Host")
 	}
 
 	openapiPath, err := url.Parse("openapi")
