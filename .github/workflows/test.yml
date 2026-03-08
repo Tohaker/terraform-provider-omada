@@ -54,8 +54,6 @@ jobs:
 
   # Run acceptance tests in a matrix with Terraform CLI versions
   test:
-    # TODO: Enable this step
-    if: false
     name: "Acceptance Tests: Terraform ${{ matrix.terraform }}"
     needs: build
     runs-on: ubuntu-latest
@@ -82,3 +80,5 @@ jobs:
           TF_ACC: "1"
         run: go test -v -cover ./internal/provider/
         timeout-minutes: 10
+        # TODO: Enable this step
+        if: false
