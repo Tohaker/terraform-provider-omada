@@ -39,7 +39,23 @@ func (p *omadaProvider) Metadata(_ context.Context, _ provider.MetadataRequest, 
 
 // Schema defines the provider-level schema for configuration data.
 func (p *omadaProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
-	resp.Schema = schema.Schema{}
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"host": schema.StringAttribute{
+				Optional: false,
+			},
+			"customer_id": schema.StringAttribute{
+				Optional: false,
+			},
+			"client_id": schema.StringAttribute{
+				Optional: false,
+			},
+			"client_secret": schema.StringAttribute{
+				Optional:  false,
+				Sensitive: true,
+			},
+		},
+	}
 }
 
 // Configure prepares a Omada API client for data sources and resources.
