@@ -54,16 +54,16 @@ func (p *omadaProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	resp.Schema = schema.Schema{
 		Attributes: map[string]schema.Attribute{
 			"host": schema.StringAttribute{
-				Optional: false,
+				Optional: true,
 			},
 			"customer_id": schema.StringAttribute{
-				Optional: false,
+				Optional: true,
 			},
 			"client_id": schema.StringAttribute{
-				Optional: false,
+				Optional: true,
 			},
 			"client_secret": schema.StringAttribute{
-				Optional:  false,
+				Optional:  true,
 				Sensitive: true,
 			},
 		},

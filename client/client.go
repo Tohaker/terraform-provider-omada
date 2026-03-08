@@ -2,6 +2,7 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -46,11 +47,11 @@ func GetAccessToken(cfg ClientConfig) (string, error) {
 
 	endpoint.RawQuery = q.Encode()
 
-	body := []byte(fmt.Sprintf(`{
+	body := fmt.Appendf(nil, `{
 			"omadacId": "%s",
 			"client_id": "%s",
 			"client_secret": "%s"
-		}`, cfg.CustomerId, cfg.ClientId, cfg.ClientSecret))
+		}`, cfg.CustomerId, cfg.ClientId, cfg.ClientSecret)
 
 	res, err := cfg.HTTPClient.Post(endpoint.String(), "application/json", bytes.NewBuffer(body))
 	if err != nil {
@@ -60,13 +61,17 @@ func GetAccessToken(cfg ClientConfig) (string, error) {
 	defer res.Body.Close()
 
 	response := &AuthorizationResponse{}
-	derr := json.NewDecoder(res.Body).Decode((response))
+	derr := json.NewDecoder(res.Body).Decode(response)
 	if derr != nil {
 		return "", derr
 	}
 
 	if res.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("Authorization returned status %d and error code %d: %s", res.StatusCode, response.ErrorCode, response.Message)
+	}
+
+	if response.Result == nil {
+		return "", fmt.Errorf("No Result was returned from the API, something else may be wrong")
 	}
 
 	return response.Result.AccessToken, nil
@@ -87,15 +92,29 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		return nil, err
 	}
 
+	// TODO: Remove this when we have figured out certificates in the test environment
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
 	var httpClient *http.Client
 	if cfg.HTTPClient != nil {
 		httpClient = cfg.HTTPClient
+		httpClient.Transport = tr
 	} else {
-		httpClient = &http.Client{}
+		httpClient = &http.Client{
+			Transport: tr,
+		}
+		cfg.HTTPClient = httpClient
+	}
+
+	accessToken, err := GetAccessToken(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	client := &Client{
-		accessToken: "",
+		accessToken: accessToken,
 		baseURL:     url.ResolveReference(openapiPath),
 		httpClient:  httpClient,
 	}
