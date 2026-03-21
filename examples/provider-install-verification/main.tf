@@ -8,4 +8,8 @@ terraform {
 
 provider "omada" {}
 
-data "omada_site" "example" {}
+data "omada_sites" "example" {}
+
+output "example_sites" {
+  value = data.omada_sites.example
+}

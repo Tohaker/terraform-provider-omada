@@ -45,6 +45,11 @@ type omadaProviderModel struct {
 	ClientSecret types.String `tfsdk:"client_secret"`
 }
 
+type providerData struct {
+	Client   *omada.APIClient
+	OmadacId string
+}
+
 // Metadata returns the provider type name.
 func (p *omadaProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "omada"
@@ -228,13 +233,20 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	cfg.DefaultHeader["Authorization"] = "AccessToken=" + *tokenResp.Result.AccessToken
 
-	resp.DataSourceData = client
-	resp.ResourceData = client
+	data := &providerData{
+		Client:   client,
+		OmadacId: customer_id,
+	}
+
+	resp.DataSourceData = data
+	resp.ResourceData = data
 }
 
 // DataSources defines the data sources implemented in the provider.
 func (p *omadaProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return nil
+	return []func() datasource.DataSource{
+		NewSitesDataSource,
+	}
 }
 
 // Resources defines the resources implemented in the provider.
