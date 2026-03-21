@@ -2,6 +2,8 @@ package provider
 
 import (
 	"context"
+	"crypto/tls"
+	"net/http"
 	"os"
 
 	omada "github.com/Tohaker/omada-go-sdk/omada"
@@ -198,6 +200,13 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	cfg := omada.NewConfiguration()
 	cfg.Servers = omada.ServerConfigurations{
 		{URL: host},
+	}
+
+	// TODO: Remove this when testing environment has SSL certification configured
+	cfg.HTTPClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
 	}
 	client := omada.NewAPIClient(cfg)
 
