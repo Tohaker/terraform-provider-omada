@@ -3,8 +3,8 @@ package provider
 import (
 	"context"
 	"os"
-	"terraform-provider-omada/client"
 
+	omada "github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -195,14 +195,18 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	// Create a new Omada client using the configuration values
-	cfg := client.ClientConfig{
-		Host:         host,
-		CustomerId:   customer_id,
+	cfg := omada.NewConfiguration()
+	cfg.Servers = omada.ServerConfigurations{
+		{URL: host},
+	}
+	client := omada.NewAPIClient(cfg)
+
+	tokenResp, _, err := client.AuthorizeAPI.AuthorizeToken(context.Background()).GrantType("client_credentials").TokenRequest(omada.TokenRequest{
 		ClientId:     client_id,
 		ClientSecret: client_secret,
-	}
+		OmadacId:     &customer_id,
+	}).Execute()
 
-	client, err := client.NewClient(cfg)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Omada API Client",
@@ -212,6 +216,8 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		)
 		return
 	}
+
+	cfg.DefaultHeader["Authorization"] = "AccessToken=" + *tokenResp.Result.AccessToken
 
 	resp.DataSourceData = client
 	resp.ResourceData = client
