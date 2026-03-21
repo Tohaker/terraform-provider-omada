@@ -2,7 +2,10 @@ module terraform-provider-omada
 
 go 1.25.5
 
-require github.com/hashicorp/terraform-plugin-framework v1.18.0
+require (
+	github.com/Tohaker/omada-go-sdk v0.0.0-20260321154959-0dbb2f0aab1b
+	github.com/hashicorp/terraform-plugin-framework v1.18.0
+)
 
 require (
 	github.com/fatih/color v1.18.0 // indirect
