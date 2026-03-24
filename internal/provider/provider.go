@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -79,6 +80,8 @@ func (p *omadaProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 
 // Configure prepares a Omada API client for data sources and resources.
 func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	tflog.Info(ctx, "Configuring Omada client")
+
 	// Retrieve provider data from configuration
 	var config omadaProviderModel
 	diags := req.Config.Get(ctx, &config)
@@ -201,6 +204,14 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
+	ctx = tflog.SetField(ctx, "omada_host", host)
+	ctx = tflog.SetField(ctx, "omada_customer_id", customer_id)
+	ctx = tflog.SetField(ctx, "omada_client_id", client_id)
+	ctx = tflog.SetField(ctx, "omada_client_secret", client_secret)
+	ctx = tflog.MaskFieldValuesWithFieldKeys(ctx, "omada_client_secret")
+
+	tflog.Debug(ctx, "Creating Omada client")
+
 	// Create a new Omada client using the configuration values
 	cfg := omada.NewConfiguration()
 	cfg.Servers = omada.ServerConfigurations{
@@ -240,6 +251,8 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	resp.DataSourceData = data
 	resp.ResourceData = data
+
+	tflog.Info(ctx, "Configured Omada client", map[string]any{"success": true})
 }
 
 // DataSources defines the data sources implemented in the provider.
