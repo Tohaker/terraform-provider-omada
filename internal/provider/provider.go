@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	omada "github.com/Tohaker/omada-go-sdk/omada"
+	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -264,5 +264,7 @@ func (p *omadaProvider) DataSources(_ context.Context) []func() datasource.DataS
 
 // Resources defines the resources implemented in the provider.
 func (p *omadaProvider) Resources(_ context.Context) []func() resource.Resource {
-	return nil
+	return []func() resource.Resource{
+		NewSiteResource,
+	}
 }
