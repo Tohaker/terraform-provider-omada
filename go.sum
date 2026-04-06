@@ -1,5 +1,5 @@
-github.com/Tohaker/omada-go-sdk v0.0.0-20260321154959-0dbb2f0aab1b h1:+ZUskC6zQOAYMRnENQSfLwABOTGXgmcb/RhTKHmy60k=
-github.com/Tohaker/omada-go-sdk v0.0.0-20260321154959-0dbb2f0aab1b/go.mod h1:Y1D/Y5LHjLyeORmF7iqOqXtLZmEhAwn3+eaL+HjwHfo=
+github.com/Tohaker/omada-go-sdk v0.3.1 h1:u/tAjsBghETPaEiNb/AZanv6AWqWluNA6SI9Dzu9EZY=
+github.com/Tohaker/omada-go-sdk v0.3.1/go.mod h1:EWK6lekGDxP9bpE439/0jXnWyAGDA7lngLTucT8CoPE=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
