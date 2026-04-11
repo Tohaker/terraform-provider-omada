@@ -358,4 +358,20 @@ func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, r
 
 // Delete deletes the resource and removes the Terraform state on success.
 func (r *siteResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state siteResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Delete existing site
+	_, _, err := r.client.SiteAPI.DeleteSite(ctx, r.omadacId, state.SiteId.ValueString()).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error Deleting site",
+			"Could not delete site, unexpected error: "+err.Error(),
+		)
+		return
+	}
 }
