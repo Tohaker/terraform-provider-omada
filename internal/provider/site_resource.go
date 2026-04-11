@@ -87,7 +87,9 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			"name": schema.StringAttribute{
 				Required: true,
 			},
-			"type": schema.Int32Attribute{},
+			"type": schema.Int32Attribute{
+				Optional: true,
+			},
 			"region": schema.StringAttribute{
 				Required: true,
 			},
@@ -99,10 +101,17 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			},
 			"tag_ids": schema.ListAttribute{
 				ElementType: types.StringType,
+				Optional:    true,
 			},
-			"longitude": schema.Float64Attribute{},
-			"latitude":  schema.Float64Attribute{},
-			"address":   schema.StringAttribute{},
+			"longitude": schema.Float64Attribute{
+				Optional: true,
+			},
+			"latitude": schema.Float64Attribute{
+				Optional: true,
+			},
+			"address": schema.StringAttribute{
+				Optional: true,
+			},
 			"device_account_setting": schema.SingleNestedAttribute{
 				Required: true,
 				Attributes: map[string]schema.Attribute{
@@ -115,8 +124,12 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 					},
 				},
 			},
-			"support_es": schema.BoolAttribute{},
-			"support_l2": schema.BoolAttribute{},
+			"support_es": schema.BoolAttribute{
+				Optional: true,
+			},
+			"support_l2": schema.BoolAttribute{
+				Optional: true,
+			},
 		},
 	}
 }
@@ -165,6 +178,14 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
+	if *site.ErrorCode != 0 {
+		resp.Diagnostics.AddError(
+			"Error creating site",
+			fmt.Sprintf("Could not create site, error code %d: %s", *site.ErrorCode, *site.Msg),
+		)
+		return
+	}
+
 	// Map response body to schema
 	plan.SiteId = types.StringPointerValue(site.Result.SiteId)
 
@@ -178,6 +199,49 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 // Read refreshes the Terraform state with the latest data.
 func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// Get current state
+	var state siteResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get refreshed site from API
+	site, _, err := r.client.SiteAPI.GetSiteEntity(ctx, r.omadacId, state.SiteId.ValueString()).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Site Entity",
+			"Could not read Omada site ID "+state.SiteId.ValueString()+": "+err.Error(),
+		)
+		return
+	}
+
+	// Overwrite site with refreshed state
+	state.Name = types.StringPointerValue(site.Result.Name)
+	state.Type = types.Int32PointerValue(site.Result.Type)
+	state.Region = types.StringPointerValue(site.Result.Region)
+	state.TimeZone = types.StringPointerValue(site.Result.TimeZone)
+	state.Scenario = types.StringPointerValue(site.Result.Scenario)
+	state.Longitude = types.Float64PointerValue(site.Result.Longitude)
+	state.Latitude = types.Float64PointerValue(site.Result.Latitude)
+	state.Address = types.StringPointerValue(site.Result.Address)
+	state.SupportES = types.BoolPointerValue(site.Result.SupportES)
+	state.SupportL2 = types.BoolPointerValue(site.Result.SupportL2)
+
+	var TagIDs []types.String
+	for _, tagId := range site.Result.TagIds {
+		TagIDs = append(TagIDs, types.StringValue(tagId))
+	}
+
+	state.TagIDs = TagIDs
+
+	// Set refreshed state
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 }
 
 // Update updates the resource and sets the updated Terraform state on success.
