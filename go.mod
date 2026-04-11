@@ -3,7 +3,7 @@ module terraform-provider-omada
 go 1.25.5
 
 require (
-	github.com/Tohaker/omada-go-sdk v0.3.1
+	github.com/Tohaker/omada-go-sdk v0.3.2-0.20260411155512-3039a2b5239e
 	github.com/hashicorp/terraform-plugin-framework v1.19.0
 	github.com/hashicorp/terraform-plugin-log v0.10.0
 )

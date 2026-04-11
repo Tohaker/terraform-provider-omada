@@ -1,5 +1,9 @@
 github.com/Tohaker/omada-go-sdk v0.3.1 h1:u/tAjsBghETPaEiNb/AZanv6AWqWluNA6SI9Dzu9EZY=
 github.com/Tohaker/omada-go-sdk v0.3.1/go.mod h1:EWK6lekGDxP9bpE439/0jXnWyAGDA7lngLTucT8CoPE=
+github.com/Tohaker/omada-go-sdk v0.3.2-0.20260411141200-a6f0a2538fab h1:3R+v9Ko4nGyp6PR6LnigFSFW2+ASL9AD0DuUBdRO+Co=
+github.com/Tohaker/omada-go-sdk v0.3.2-0.20260411141200-a6f0a2538fab/go.mod h1:EWK6lekGDxP9bpE439/0jXnWyAGDA7lngLTucT8CoPE=
+github.com/Tohaker/omada-go-sdk v0.3.2-0.20260411155512-3039a2b5239e h1:AgnP3BdDwcvoUaZ+W2+/NKihEcbmz7Qz1hQclK0hTDU=
+github.com/Tohaker/omada-go-sdk v0.3.2-0.20260411155512-3039a2b5239e/go.mod h1:EWK6lekGDxP9bpE439/0jXnWyAGDA7lngLTucT8CoPE=
 github.com/bufbuild/protocompile v0.14.1 h1:iA73zAf/fyljNjQKwYzUHD6AD4R8KMasmwa/FBatYVw=
 github.com/bufbuild/protocompile v0.14.1/go.mod h1:ppVdAIhbr2H8asPk6k4pY7t9zB1OU5DoEw9xY/FUi1c=
 github.com/cespare/xxhash/v2 v2.3.0 h1:UL815xU9SqsFlibzuggzjXhog7bL6oX9BbNZnL2UFvs=
