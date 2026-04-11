@@ -89,6 +89,7 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			},
 			"type": schema.Int32Attribute{
 				Optional: true,
+				Computed: true,
 			},
 			"region": schema.StringAttribute{
 				Required: true,
@@ -126,9 +127,11 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 			},
 			"support_es": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 			"support_l2": schema.BoolAttribute{
 				Optional: true,
+				Computed: true,
 			},
 		},
 	}
@@ -188,6 +191,19 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 
 	// Map response body to schema
 	plan.SiteId = types.StringPointerValue(site.Result.SiteId)
+
+	updatedSite, _, err := r.client.SiteAPI.GetSiteEntity(ctx, r.omadacId, plan.SiteId.ValueString()).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Site Entry",
+			"Could not read Omada site ID "+plan.SiteId.ValueString()+": "+err.Error(),
+		)
+	}
+
+	// Ensure non-nullable properties without are set to their computed value in the plan
+	plan.Type = types.Int32PointerValue(updatedSite.Result.Type)
+	plan.SupportES = types.BoolPointerValue(updatedSite.Result.SupportES)
+	plan.SupportL2 = types.BoolPointerValue(updatedSite.Result.SupportL2)
 
 	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
