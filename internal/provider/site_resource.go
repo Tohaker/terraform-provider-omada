@@ -1,0 +1,269 @@
+package provider
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Tohaker/omada-go-sdk/omada"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+)
+
+// Ensure the implementation satisfies the expected interfaces.
+var (
+	_ resource.Resource              = &siteResource{}
+	_ resource.ResourceWithConfigure = &siteResource{}
+)
+
+// NewSiteResource is a helper function to simplify the provider implementation.
+func NewSiteResource() resource.Resource {
+	return &siteResource{}
+}
+
+// siteResource is the resource implementation.
+type siteResource struct {
+	client   *omada.APIClient
+	omadacId string
+}
+
+// siteResourceModel maps the resource schema data.
+type siteResourceModel struct {
+	SiteId               types.String                  `tfsdk:"site_id"`
+	Name                 types.String                  `tfsdk:"name"`
+	Type                 types.Int32                   `tfsdk:"type"`
+	Region               types.String                  `tfsdk:"region"`
+	TimeZone             types.String                  `tfsdk:"time_zone"`
+	Scenario             types.String                  `tfsdk:"scenario"`
+	TagIDs               []types.String                `tfsdk:"tag_ids"`
+	Longitude            types.Float64                 `tfsdk:"longitude"`
+	Latitude             types.Float64                 `tfsdk:"latitude"`
+	Address              types.String                  `tfsdk:"address"`
+	DeviceAccountSetting siteDeviceAccountSettingModel `tfsdk:"device_account_setting"`
+	SupportES            types.Bool                    `tfsdk:"support_es"`
+	SupportL2            types.Bool                    `tfsdk:"support_l2"`
+}
+
+// siteDeviceAccountSettingModel maps device account settings data.
+type siteDeviceAccountSettingModel struct {
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
+}
+
+// Configure adds the provider configured client to the resource.
+func (d *siteResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Add a nil check when handling ProviderData because Terraform
+	// sets that data after it calls the ConfigureProvider RPC.
+	if req.ProviderData == nil {
+		return
+	}
+
+	data, ok := req.ProviderData.(*providerData)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected *omada.APIClient, got %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+
+		return
+	}
+
+	d.client = data.Client
+	d.omadacId = data.OmadacId
+}
+
+// Metadata returns the resource type name.
+func (r *siteResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_site"
+}
+
+// Schema defines the schema for the resource.
+func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Attributes: map[string]schema.Attribute{
+			"site_id": schema.StringAttribute{
+				Computed: true,
+			},
+			"name": schema.StringAttribute{
+				Required: true,
+			},
+			"type": schema.Int32Attribute{
+				Optional: true,
+				Computed: true,
+			},
+			"region": schema.StringAttribute{
+				Required: true,
+			},
+			"time_zone": schema.StringAttribute{
+				Required: true,
+			},
+			"scenario": schema.StringAttribute{
+				Required: true,
+			},
+			"tag_ids": schema.ListAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+			},
+			"longitude": schema.Float64Attribute{
+				Optional: true,
+			},
+			"latitude": schema.Float64Attribute{
+				Optional: true,
+			},
+			"address": schema.StringAttribute{
+				Optional: true,
+			},
+			"device_account_setting": schema.SingleNestedAttribute{
+				Required: true,
+				Attributes: map[string]schema.Attribute{
+					"username": schema.StringAttribute{
+						Required: true,
+					},
+					"password": schema.StringAttribute{
+						Required:  true,
+						Sensitive: true,
+					},
+				},
+			},
+			"support_es": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+			},
+			"support_l2": schema.BoolAttribute{
+				Optional: true,
+				Computed: true,
+			},
+		},
+	}
+}
+
+// Create creates the resource and sets the initial Terraform state.
+func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	// Retrieve values from plan
+	var plan siteResourceModel
+	diags := req.Plan.Get(ctx, &plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Generate API request body from plan
+	var siteEntity omada.CreateSiteEntity
+	siteEntity.Name = plan.Name.ValueString()
+	siteEntity.Type = plan.Type.ValueInt32Pointer()
+	siteEntity.Region = plan.Region.ValueString()
+	siteEntity.TimeZone = plan.TimeZone.ValueString()
+	siteEntity.Scenario = plan.Scenario.ValueString()
+	siteEntity.Longitude = plan.Longitude.ValueFloat64Pointer()
+	siteEntity.Latitude = plan.Latitude.ValueFloat64Pointer()
+	siteEntity.Address = plan.Address.ValueStringPointer()
+	siteEntity.DeviceAccountSetting = omada.DeviceAccountSettingOpenApiVO{
+		Username: plan.DeviceAccountSetting.Username.ValueString(),
+		Password: plan.DeviceAccountSetting.Password.ValueString(),
+	}
+	siteEntity.SupportES = plan.SupportES.ValueBoolPointer()
+	siteEntity.SupportL2 = plan.SupportL2.ValueBoolPointer()
+
+	var tagIds []string
+	for _, tagId := range plan.TagIDs {
+		tagIds = append(tagIds, tagId.ValueString())
+	}
+
+	siteEntity.TagIds = tagIds
+
+	// Create new site
+	site, _, err := r.client.SiteAPI.CreateNewSite(ctx, r.omadacId).CreateSiteEntity(siteEntity).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error creating site",
+			"Could not create site, unexpected error: "+err.Error(),
+		)
+		return
+	}
+
+	if *site.ErrorCode != 0 {
+		resp.Diagnostics.AddError(
+			"Error creating site",
+			fmt.Sprintf("Could not create site, error code %d: %s", *site.ErrorCode, *site.Msg),
+		)
+		return
+	}
+
+	// Map response body to schema
+	plan.SiteId = types.StringPointerValue(site.Result.SiteId)
+
+	updatedSite, _, err := r.client.SiteAPI.GetSiteEntity(ctx, r.omadacId, plan.SiteId.ValueString()).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Site Entry",
+			"Could not read Omada site ID "+plan.SiteId.ValueString()+": "+err.Error(),
+		)
+	}
+
+	// Ensure non-nullable properties without are set to their computed value in the plan
+	plan.Type = types.Int32PointerValue(updatedSite.Result.Type)
+	plan.SupportES = types.BoolPointerValue(updatedSite.Result.SupportES)
+	plan.SupportL2 = types.BoolPointerValue(updatedSite.Result.SupportL2)
+
+	// Set state to fully populated data
+	diags = resp.State.Set(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+// Read refreshes the Terraform state with the latest data.
+func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	// Get current state
+	var state siteResourceModel
+	diags := req.State.Get(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get refreshed site from API
+	site, _, err := r.client.SiteAPI.GetSiteEntity(ctx, r.omadacId, state.SiteId.ValueString()).Execute()
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Site Entity",
+			"Could not read Omada site ID "+state.SiteId.ValueString()+": "+err.Error(),
+		)
+		return
+	}
+
+	// Overwrite site with refreshed state
+	state.Name = types.StringPointerValue(site.Result.Name)
+	state.Type = types.Int32PointerValue(site.Result.Type)
+	state.Region = types.StringPointerValue(site.Result.Region)
+	state.TimeZone = types.StringPointerValue(site.Result.TimeZone)
+	state.Scenario = types.StringPointerValue(site.Result.Scenario)
+	state.Longitude = types.Float64PointerValue(site.Result.Longitude)
+	state.Latitude = types.Float64PointerValue(site.Result.Latitude)
+	state.Address = types.StringPointerValue(site.Result.Address)
+	state.SupportES = types.BoolPointerValue(site.Result.SupportES)
+	state.SupportL2 = types.BoolPointerValue(site.Result.SupportL2)
+
+	var TagIDs []types.String
+	for _, tagId := range site.Result.TagIds {
+		TagIDs = append(TagIDs, types.StringValue(tagId))
+	}
+
+	state.TagIDs = TagIDs
+
+	// Set refreshed state
+	diags = resp.State.Set(ctx, &state)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+}
+
+// Update updates the resource and sets the updated Terraform state on success.
+func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+}
+
+// Delete deletes the resource and removes the Terraform state on success.
+func (r *siteResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+}
