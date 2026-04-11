@@ -166,9 +166,7 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Map response body to schema
-	if siteId, ok := site.Result["siteId"].(string); ok {
-		plan.SiteId = types.StringValue(siteId)
-	}
+	plan.SiteId = types.StringPointerValue(site.Result.SiteId)
 
 	// Set state to fully populated data
 	diags = resp.State.Set(ctx, plan)
