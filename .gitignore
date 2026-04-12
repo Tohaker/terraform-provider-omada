@@ -15,6 +15,7 @@ website/node_modules
 .vagrant/
 *.backup
 ./*.tfstate
+*.tfvars
 .terraform/
 *.log
 *.bak
@@ -24,6 +25,7 @@ website/node_modules
 *.iml
 *.test
 *.iml
+.env
 
 website/vendor
 

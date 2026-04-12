@@ -8,19 +8,14 @@ terraform {
 
 provider "omada" {}
 
-resource "omada_site" "example" {
-  name      = "Terraform Example"
+resource "omada_site" "home" {
+  name      = "Home"
   region    = "United Kingdom"
   time_zone = "Europe/London"
   scenario  = "Home"
 
   device_account_setting = {
     username = "admin"
-    password = "VeryStr@ngPas5w0rd"
+    password = var.site_password
   }
-}
-
-output "example_sites" {
-  value     = omada_site.example
-  sensitive = true
 }
