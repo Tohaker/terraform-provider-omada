@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Tohaker/omada-go-sdk/omada"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -14,8 +15,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &siteResource{}
-	_ resource.ResourceWithConfigure = &siteResource{}
+	_ resource.Resource                = &siteResource{}
+	_ resource.ResourceWithConfigure   = &siteResource{}
+	_ resource.ResourceWithImportState = &siteResource{}
 )
 
 // NewSiteResource is a helper function to simplify the provider implementation.
@@ -31,19 +33,19 @@ type siteResource struct {
 
 // siteResourceModel maps the resource schema data.
 type siteResourceModel struct {
-	SiteId               types.String                  `tfsdk:"site_id"`
-	Name                 types.String                  `tfsdk:"name"`
-	Type                 types.Int32                   `tfsdk:"type"`
-	Region               types.String                  `tfsdk:"region"`
-	TimeZone             types.String                  `tfsdk:"time_zone"`
-	Scenario             types.String                  `tfsdk:"scenario"`
-	TagIDs               []types.String                `tfsdk:"tag_ids"`
-	Longitude            types.Float64                 `tfsdk:"longitude"`
-	Latitude             types.Float64                 `tfsdk:"latitude"`
-	Address              types.String                  `tfsdk:"address"`
-	DeviceAccountSetting siteDeviceAccountSettingModel `tfsdk:"device_account_setting"`
-	SupportES            types.Bool                    `tfsdk:"support_es"`
-	SupportL2            types.Bool                    `tfsdk:"support_l2"`
+	SiteId               types.String                   `tfsdk:"site_id"`
+	Name                 types.String                   `tfsdk:"name"`
+	Type                 types.Int32                    `tfsdk:"type"`
+	Region               types.String                   `tfsdk:"region"`
+	TimeZone             types.String                   `tfsdk:"time_zone"`
+	Scenario             types.String                   `tfsdk:"scenario"`
+	TagIDs               []types.String                 `tfsdk:"tag_ids"`
+	Longitude            types.Float64                  `tfsdk:"longitude"`
+	Latitude             types.Float64                  `tfsdk:"latitude"`
+	Address              types.String                   `tfsdk:"address"`
+	DeviceAccountSetting *siteDeviceAccountSettingModel `tfsdk:"device_account_setting"`
+	SupportES            types.Bool                     `tfsdk:"support_es"`
+	SupportL2            types.Bool                     `tfsdk:"support_l2"`
 }
 
 // siteDeviceAccountSettingModel maps device account settings data.
@@ -152,6 +154,14 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 
+	if plan.DeviceAccountSetting == nil {
+		resp.Diagnostics.AddError(
+			"Missing device_account_setting",
+			"device_account_setting must be provided.",
+		)
+		return
+	}
+
 	// Generate API request body from plan
 	var siteEntity omada.CreateSiteEntity
 	siteEntity.Name = plan.Name.ValueString()
@@ -238,6 +248,15 @@ func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		return
 	}
 
+	// Get refreshed site device account setting from API
+	deviceAccount, _, deviceAccountErr := r.client.SiteAPI.GetSiteDeviceAccountSetting(ctx, r.omadacId, state.SiteId.ValueString()).Execute()
+	if deviceAccountErr != nil {
+		resp.Diagnostics.AddError(
+			"Error reading Device Account",
+			"Could not read Device Account for site ID"+state.SiteId.ValueString()+": "+deviceAccountErr.Error(),
+		)
+	}
+
 	// Overwrite site with refreshed state
 	state.Name = types.StringPointerValue(site.Result.Name)
 	state.Type = types.Int32PointerValue(site.Result.Type)
@@ -249,6 +268,10 @@ func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	state.Address = types.StringPointerValue(site.Result.Address)
 	state.SupportES = types.BoolPointerValue(site.Result.SupportES)
 	state.SupportL2 = types.BoolPointerValue(site.Result.SupportL2)
+	state.DeviceAccountSetting = &siteDeviceAccountSettingModel{
+		Username: types.StringValue(deviceAccount.Result.Username),
+		Password: types.StringValue(deviceAccount.Result.Password),
+	}
 
 	var TagIDs []types.String
 	for _, tagId := range site.Result.TagIds {
@@ -265,6 +288,13 @@ func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	}
 }
 
+func (r *siteResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	// Retrieve import ID and save to site_id attribute
+	SiteId := path.Root("site_id")
+
+	resource.ImportStatePassthroughID(ctx, SiteId, req, resp)
+}
+
 // Update updates the resource and sets the updated Terraform state on success.
 func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve values from plan
@@ -272,6 +302,14 @@ func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	diags := req.Plan.Get(ctx, &plan)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if plan.DeviceAccountSetting == nil {
+		resp.Diagnostics.AddError(
+			"Missing device_account_setting",
+			"device_account_setting must be provided.",
+		)
 		return
 	}
 
