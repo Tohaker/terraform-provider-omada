@@ -213,6 +213,7 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 			"Error reading Site Entry",
 			"Could not read Omada site ID "+plan.SiteId.ValueString()+": "+err.Error(),
 		)
+		return
 	}
 
 	// Ensure non-nullable properties without are set to their computed value in the plan
@@ -253,7 +254,7 @@ func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 	if deviceAccountErr != nil {
 		resp.Diagnostics.AddError(
 			"Error reading Device Account",
-			"Could not read Device Account for site ID"+state.SiteId.ValueString()+": "+deviceAccountErr.Error(),
+			"Could not read Device Account for site ID "+state.SiteId.ValueString()+": "+deviceAccountErr.Error(),
 		)
 	}
 
@@ -379,6 +380,7 @@ func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, r
 			"Error reading Site Entry",
 			"Could not read Omada site ID "+plan.SiteId.ValueString()+": "+err.Error(),
 		)
+		return
 	}
 
 	// Ensure non-nullable properties without are set to their computed value in the plan
