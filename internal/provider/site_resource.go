@@ -84,61 +84,77 @@ func (r *siteResource) Metadata(_ context.Context, req resource.MetadataRequest,
 // Schema defines the schema for the resource.
 func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages a site.",
 		Attributes: map[string]schema.Attribute{
 			"site_id": schema.StringAttribute{
-				Computed: true,
+				Description: "Site ID",
+				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"name": schema.StringAttribute{
-				Required: true,
+				Description: "Name of the site should contain 1 to 64 characters.",
+				Required:    true,
 			},
 			"type": schema.Int32Attribute{
-				Optional: true,
-				Computed: true,
+				Description: "Type of the site should be 0 or 1, and 0 means basic site, 1 means pro site.",
+				Optional:    true,
+				Computed:    true,
 			},
 			"region": schema.StringAttribute{
-				Required: true,
+				Description: `Country/Region of the site; For the values of region, refer to the abbreviation of the ISO country code; For example, you need to input "United States" for the United States of America.`,
+				Required:    true,
 			},
 			"time_zone": schema.StringAttribute{
-				Required: true,
+				Description: "For the values of the timezone of the site, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).",
+				Required:    true,
 			},
 			"scenario": schema.StringAttribute{
-				Required: true,
+				Description: "For the values of the scenario of the site, refer to result of the interface for Get scenario list.",
+				Required:    true,
 			},
 			"tag_ids": schema.ListAttribute{
+				Description: "Site tag ID",
 				ElementType: types.StringType,
 				Optional:    true,
 			},
 			"longitude": schema.Float64Attribute{
-				Optional: true,
+				Description: "Longitude of the site should be within the range of -180 - 180.",
+				Optional:    true,
 			},
 			"latitude": schema.Float64Attribute{
-				Optional: true,
+				Description: "Latitude of the site should be within the range of -90 - 90.",
+				Optional:    true,
 			},
 			"address": schema.StringAttribute{
-				Optional: true,
+				Description: "Address of the site.",
+				Optional:    true,
 			},
 			"device_account_setting": schema.SingleNestedAttribute{
-				Required: true,
+				Description: "Login information for devices.",
+				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"username": schema.StringAttribute{
-						Required: true,
+						Description: "Device account username should contain 1 to 64 ASCII characters.",
+						Required:    true,
 					},
 					"password": schema.StringAttribute{
-						Required:  true,
-						Sensitive: true,
+						Description: "Device account parameter [password] should contain 10 to 64 ASCII characters. And passwords must be a combination of uppercase letters, lowercase letters, numbers, and special symbols. Symbols such as ! # $ % & * @ ^ are supported.\nThe password should not contain consecutive identical characters.\nUsername and Password should not be the same.",
+						Required:    true,
+						Sensitive:   true,
 					},
 				},
 			},
 			"support_es": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "Whether the site supports adopting Agile Series Switches.",
+				Optional:    true,
+				Computed:    true,
 			},
 			"support_l2": schema.BoolAttribute{
-				Optional: true,
-				Computed: true,
+				Description: "Whether the site supports adopting Non-Agile Series Switches.",
+				Optional:    true,
+				Computed:    true,
 			},
 		},
 	}
