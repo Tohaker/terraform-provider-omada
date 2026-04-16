@@ -1,0 +1,1 @@
+data "omada_sites" "all" {}
