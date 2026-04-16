@@ -97,7 +97,7 @@ func TestAccSiteResource(t *testing.T) {
 		func(req *http.Request) (*http.Response, error) {
 			newSite := make(map[string]any)
 			if err := json.NewDecoder(req.Body).Decode(&newSite); err != nil {
-				return httpmock.NewStringResponse(400, ""), nil
+				return httpmock.NewStringResponse(400, ""), err
 			}
 
 			readResponse = fmt.Sprintf(`{
@@ -138,7 +138,7 @@ func TestAccSiteResource(t *testing.T) {
 		func(r *http.Request) (*http.Response, error) {
 			deviceAccount := make(map[string]any)
 			if err := json.NewDecoder(r.Body).Decode(&deviceAccount); err != nil {
-				return httpmock.NewStringResponse(400, ""), nil
+				return httpmock.NewStringResponse(400, ""), err
 			}
 
 			readDeviceAccountResponse = fmt.Sprintf(`{
