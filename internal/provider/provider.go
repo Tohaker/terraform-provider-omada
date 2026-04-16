@@ -51,6 +51,14 @@ type providerData struct {
 	OmadacId string
 }
 
+var newOmadaHTTPClient = func() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
+	}
+}
+
 // Metadata returns the provider type name.
 func (p *omadaProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "omada"
@@ -219,11 +227,7 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	// TODO: Remove this when testing environment has SSL certification configured
-	cfg.HTTPClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
+	cfg.HTTPClient = newOmadaHTTPClient()
 	client := omada.NewAPIClient(cfg)
 
 	tokenResp, _, err := client.AuthorizeAPI.AuthorizeToken(context.Background()).GrantType("client_credentials").TokenRequest(omada.TokenRequest{
