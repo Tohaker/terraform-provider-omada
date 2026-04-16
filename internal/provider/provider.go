@@ -41,7 +41,7 @@ type omadaProvider struct {
 // omadaProviderModel maps provider schema data to a Go type.
 type omadaProviderModel struct {
 	Host         types.String `tfsdk:"host"`
-	CustomerId   types.String `tfsdk:"customer_id"`
+	ControllerId types.String `tfsdk:"controller_id"`
 	ClientId     types.String `tfsdk:"client_id"`
 	ClientSecret types.String `tfsdk:"client_secret"`
 }
@@ -68,19 +68,24 @@ func (p *omadaProvider) Metadata(_ context.Context, _ provider.MetadataRequest, 
 // Schema defines the provider-level schema for configuration data.
 func (p *omadaProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Connect to an Omada Controller instance.",
 		Attributes: map[string]schema.Attribute{
 			"host": schema.StringAttribute{
-				Optional: true,
+				Description: "URI for the Omada Controller API. May also be provided via OMADA_HOST environment variable.",
+				Optional:    true,
 			},
-			"customer_id": schema.StringAttribute{
-				Optional: true,
+			"controller_id": schema.StringAttribute{
+				Description: "Unique ID assigned to the Omada Controller. May also be provided via OMADA_CONTROLLER_ID environment variable.",
+				Optional:    true,
 			},
 			"client_id": schema.StringAttribute{
-				Optional: true,
+				Description: "Client ID for the Omada Controller Application. May also be provided via OMADA_CLIENT_ID environment variable.",
+				Optional:    true,
 			},
 			"client_secret": schema.StringAttribute{
-				Optional:  true,
-				Sensitive: true,
+				Description: "Client Secret for the Omada Controller Application. May also be provided via OMADA_CLIENT_SECRET environment variable.",
+				Optional:    true,
+				Sensitive:   true,
 			},
 		},
 	}
@@ -110,12 +115,12 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		)
 	}
 
-	if config.CustomerId.IsUnknown() {
+	if config.ControllerId.IsUnknown() {
 		resp.Diagnostics.AddAttributeError(
-			path.Root("customer_id"),
-			"Unknown Omada Customer or MSP ID",
-			"The provider cannot create the Omada API client as there is an unknown configuration value for the Omada Customer or MSP ID. "+
-				"Either target apply the source of the value first, set the value statically in the configuration, or use the OMADA_CUSTOMER_ID environment variable.",
+			path.Root("controller_id"),
+			"Unknown Omada Controller ID",
+			"The provider cannot create the Omada API client as there is an unknown configuration value for the Omada Controller ID. "+
+				"Either target apply the source of the value first, set the value statically in the configuration, or use the OMADA_CONTROLLER_ID environment variable.",
 		)
 	}
 
@@ -145,7 +150,7 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// with Terraform configuration value if set.
 
 	host := os.Getenv("OMADA_HOST")
-	customer_id := os.Getenv("OMADA_CUSTOMER_ID")
+	controller_id := os.Getenv("OMADA_CONTROLLER_ID")
 	client_id := os.Getenv("OMADA_CLIENT_ID")
 	client_secret := os.Getenv("OMADA_CLIENT_SECRET")
 
@@ -153,8 +158,8 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		host = config.Host.ValueString()
 	}
 
-	if !config.CustomerId.IsNull() {
-		customer_id = config.CustomerId.ValueString()
+	if !config.ControllerId.IsNull() {
+		controller_id = config.ControllerId.ValueString()
 	}
 
 	if !config.ClientId.IsNull() {
@@ -178,12 +183,12 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		)
 	}
 
-	if customer_id == "" {
+	if controller_id == "" {
 		resp.Diagnostics.AddAttributeError(
-			path.Root("customer_id"),
-			"Missing Omada Customer or MSP ID",
-			"The provider cannot create the Omada API client as there is a missing or empty value for the Omada Customer or MSP ID. "+
-				"Set the customer_id value in the configuration or use the OMADA_CUSTOMER_ID environment variable. "+
+			path.Root("controller_id"),
+			"Missing Omada Controller ID",
+			"The provider cannot create the Omada API client as there is a missing or empty value for the Omada Controller ID. "+
+				"Set the controller_id value in the configuration or use the OMADA_CONTROLLER_ID environment variable. "+
 				"If either is already set, ensure the value is not empty.",
 		)
 	}
@@ -213,7 +218,7 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	ctx = tflog.SetField(ctx, "omada_host", host)
-	ctx = tflog.SetField(ctx, "omada_customer_id", customer_id)
+	ctx = tflog.SetField(ctx, "omada_controller_id", controller_id)
 	ctx = tflog.SetField(ctx, "omada_client_id", client_id)
 	ctx = tflog.SetField(ctx, "omada_client_secret", client_secret)
 	ctx = tflog.MaskFieldValuesWithFieldKeys(ctx, "omada_client_secret")
@@ -233,7 +238,7 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	tokenResp, _, err := client.AuthorizeAPI.AuthorizeToken(context.Background()).GrantType("client_credentials").TokenRequest(omada.TokenRequest{
 		ClientId:     client_id,
 		ClientSecret: client_secret,
-		OmadacId:     &customer_id,
+		OmadacId:     &controller_id,
 	}).Execute()
 
 	if err != nil {
@@ -250,7 +255,7 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	data := &providerData{
 		Client:   client,
-		OmadacId: customer_id,
+		OmadacId: controller_id,
 	}
 
 	resp.DataSourceData = data
