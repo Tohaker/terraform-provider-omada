@@ -79,50 +79,65 @@ func (d *sitesDataSource) Metadata(_ context.Context, req datasource.MetadataReq
 // Schema defines the schema for the data source.
 func (d *sitesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Fetches a list of the first 1000 sites.",
 		Attributes: map[string]schema.Attribute{
 			"sites": schema.ListNestedAttribute{
-				Computed: true,
+				Description: "List of sites.",
+				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"site_id": schema.StringAttribute{
-							Computed: true,
+							Description: "Site ID",
+							Computed:    true,
 						},
 						"name": schema.StringAttribute{
-							Computed: true,
+							Description: "Name of the site should contain 1 to 64 characters.",
+							Computed:    true,
 						},
 						"tag_ids": schema.ListAttribute{
+							Description: "Site tag ID",
 							ElementType: types.StringType,
 							Computed:    true,
 						},
 						"region": schema.StringAttribute{
-							Computed: true,
+							Description: `Country/Region of the site; For the values of region, refer to the abbreviation of the ISO country code; For example, you need to input "United States" for the United States of America.`,
+							Computed:    true,
 						},
 						"time_zone": schema.StringAttribute{
-							Computed: true,
+							Description: "For the values of the timezone of the site, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).",
+							Computed:    true,
 						},
 						"scenario": schema.StringAttribute{
-							Computed: true,
+							Description: "For the values of the scenario of the site, refer to result of the interface for Get scenario list.",
+							Computed:    true,
 						},
 						"longitude": schema.Float64Attribute{
-							Computed: true,
+							Description: "Longitude of the site should be within the range of -180 - 180.",
+							Computed:    true,
 						},
 						"latitude": schema.Float64Attribute{
-							Computed: true,
+							Description: "Latitude of the site should be within the range of -90 - 90.",
+							Computed:    true,
 						},
 						"address": schema.StringAttribute{
-							Computed: true,
+							Description: "Address of the site.",
+							Computed:    true,
 						},
 						"type": schema.Int32Attribute{
-							Computed: true,
+							Description: "Type of the site should be 0 or 1, and 0 means basic site, 1 means pro site.",
+							Computed:    true,
 						},
 						"support_es": schema.BoolAttribute{
-							Computed: true,
+							Description: "Whether the site supports adopting Agile Series Switches.",
+							Computed:    true,
 						},
 						"support_l2": schema.BoolAttribute{
-							Computed: true,
+							Description: "Whether the site supports adopting Non-Agile Series Switches.",
+							Computed:    true,
 						},
 						"site_public_ip": schema.StringAttribute{
-							Computed: true,
+							Description: "Adopted gateway public ip of the site, only useful for cloud based controller and remote management local Controller.",
+							Computed:    true,
 						},
 					},
 				},
