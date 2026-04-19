@@ -1,6 +1,24 @@
+terraform {
+  required_providers {
+    omada = {
+      source = "Tohaker/omada"
+    }
+  }
+}
+
+variable "client_secret" {
+  type      = string
+  sensitive = true
+}
+
+
 provider "omada" {
-  host          = "http://localhost:8043"
+  # Your software controller is hosted in the US region
+  host          = "https://use1-omada-cloud.tplinkcloud.com"
   controller_id = "example-controller-id"
   client_id     = "example-client-id"
-  client_secret = "example-client-secret"
+
+  # Alternatively, omit this field and supply it securely 
+  # with the OMADA_CLIENT_SECRET environment variable
+  client_secret = var.client_secret
 }

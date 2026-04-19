@@ -68,22 +68,22 @@ func (p *omadaProvider) Metadata(_ context.Context, _ provider.MetadataRequest, 
 // Schema defines the provider-level schema for configuration data.
 func (p *omadaProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Connect to an Omada Controller instance.",
+		Description: "Terraform Provider for managing a TP-Link Omada Software Controller. Supports v5.x and v6.x.",
 		Attributes: map[string]schema.Attribute{
 			"host": schema.StringAttribute{
-				Description: "URI for the Omada Controller API. May also be provided via OMADA_HOST environment variable.",
+				Description: "URI for the Omada Controller API. May also be provided via `OMADA_HOST` environment variable.",
 				Optional:    true,
 			},
 			"controller_id": schema.StringAttribute{
-				Description: "Unique ID assigned to the Omada Controller. May also be provided via OMADA_CONTROLLER_ID environment variable.",
+				Description: "Unique ID assigned to the Omada Controller. May also be provided via `OMADA_CONTROLLER_ID` environment variable.",
 				Optional:    true,
 			},
 			"client_id": schema.StringAttribute{
-				Description: "Client ID for the Omada Controller Application. May also be provided via OMADA_CLIENT_ID environment variable.",
+				Description: "Client ID for the Omada Controller Application. May also be provided via `OMADA_CLIENT_ID` environment variable.",
 				Optional:    true,
 			},
 			"client_secret": schema.StringAttribute{
-				Description: "Client Secret for the Omada Controller Application. May also be provided via OMADA_CLIENT_SECRET environment variable.",
+				Description: "Client Secret for the Omada Controller Application. May also be provided via `OMADA_CLIENT_SECRET` environment variable.",
 				Optional:    true,
 				Sensitive:   true,
 			},
