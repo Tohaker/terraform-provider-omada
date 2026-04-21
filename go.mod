@@ -1,6 +1,6 @@
 module terraform-provider-omada
 
-go 1.25.5
+go 1.25.8
 
 require (
 	github.com/Tohaker/omada-go-sdk v0.4.0
