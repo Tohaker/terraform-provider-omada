@@ -5,7 +5,7 @@ GO_PATH="/go/bin"
 cat <<EOF > ~/.terraformrc
 provider_installation {
   dev_overrides {
-      "registry.terraform.io/tohaker/omada" = "$GO_PATH"
+      "registry.terraform.io/Tohaker/omada" = "$GO_PATH"
   }
 
   # For all other providers, install them directly from their origin provider
