@@ -79,10 +79,10 @@ func (d *sitesDataSource) Metadata(_ context.Context, req datasource.MetadataReq
 // Schema defines the schema for the data source.
 func (d *sitesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches a list of the first 1000 sites.",
+		Description: "Fetches a list of sites. Only the first 1000 sites are returned.",
 		Attributes: map[string]schema.Attribute{
 			"sites": schema.ListNestedAttribute{
-				Description: "List of sites.",
+				Description: "The list of site summaries. Up to 1000 will be returned.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -91,32 +91,32 @@ func (d *sitesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 						},
 						"name": schema.StringAttribute{
-							Description: "Name of the site should contain 1 to 64 characters.",
+							Description: "Name of the site. Will contain 1 to 64 characters.",
 							Computed:    true,
 						},
 						"tag_ids": schema.ListAttribute{
-							Description: "Site tag ID",
+							Description: "List of site tag ids.",
 							ElementType: types.StringType,
 							Computed:    true,
 						},
 						"region": schema.StringAttribute{
-							Description: `Country/Region of the site; For the values of region, refer to the abbreviation of the ISO country code; For example, you need to input "United States" for the United States of America.`,
+							Description: "The Country/Region of the site. For the possible values of `region`, refer to the abbreviation of the ISO country code; For example, \"United States\" refers to the United States of America.",
 							Computed:    true,
 						},
 						"time_zone": schema.StringAttribute{
-							Description: "For the values of the timezone of the site, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).",
+							Description: "Time zone of the site. For possible values, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).",
 							Computed:    true,
 						},
 						"scenario": schema.StringAttribute{
-							Description: "For the values of the scenario of the site, refer to result of the interface for Get scenario list.",
+							Description: "Scenario in which the site is deployed. For the values of the scenario of the site, refer to result of the interface for [Get scenario list](https://use1-omada-northbound.tplinkcloud.com/doc.html#/00%20All/Site/getScenarioList).",
 							Computed:    true,
 						},
 						"longitude": schema.Float64Attribute{
-							Description: "Longitude of the site should be within the range of -180 - 180.",
+							Description: "Longitude of the site. Will be within the range of -180 - 180.",
 							Computed:    true,
 						},
 						"latitude": schema.Float64Attribute{
-							Description: "Latitude of the site should be within the range of -90 - 90.",
+							Description: "Latitude of the site. Will be within the range of -90 - 90.",
 							Computed:    true,
 						},
 						"address": schema.StringAttribute{
@@ -124,7 +124,7 @@ func (d *sitesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 						},
 						"type": schema.Int32Attribute{
-							Description: "Type of the site should be 0 or 1, and 0 means basic site, 1 means pro site.",
+							Description: "Type of the site (0 or 1).\n 0 means a Basic site, 1 means a Pro site.",
 							Computed:    true,
 						},
 						"support_es": schema.BoolAttribute{
@@ -136,7 +136,7 @@ func (d *sitesDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 						},
 						"site_public_ip": schema.StringAttribute{
-							Description: "Adopted gateway public ip of the site, only useful for cloud based controller and remote management local Controller.",
+							Description: "Adopted gateway public IP of the site, only useful for cloud based controllers and remote management local Controllers.",
 							Computed:    true,
 						},
 					},

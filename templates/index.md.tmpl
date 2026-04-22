@@ -1,0 +1,38 @@
+---
+page_title: "{{.ProviderShortName}} Provider"
+subcategory: ""
+description: |-
+  {{.Description}}
+---
+
+# {{.ProviderShortName}} Provider
+
+Manage resources for a [TP-Link Omada Software Controller](https://www.tp-link.com/omada-sdn/)
+
+## Authentication
+
+The provider uses the [Client Credentials Mode](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home) Access Process to obtain an access token.
+For authentication, the provider requires you to supply the following information;
+
+- Host
+- Client ID
+- Client Secret
+- Customer or MSP ID (also referred to as the Omada ID)
+
+For detailed instructions on how to obtain these from your Software Controller, [see here](https://support.omadanetworks.com/uk/document/109315#_Toc212122902).
+
+You may also choose to set these to the following environment variables respectively;
+
+- `OMADA_HOST`
+- `OMADA_CLIENT_ID`
+- `OMADA_CLIENT_SECRET`
+- `OMADA_CONTROLLER_ID`
+
+-> If you are self-hosting your Software Controller, the host must be resolvable from wherever your Terraform configuration is deployed. 
+For example, in your local network you may set your host to `https://192.168.0.10:8043`
+
+## Example Usage
+
+{{tffile "examples/provider/provider.tf"}}
+
+{{ .SchemaMarkdown | trimspace }}

@@ -1,0 +1,29 @@
+# Normalize line endings to LF for all text files on checkout,
+# regardless of the contributor's OS / git core.autocrlf setting.
+# This avoids spurious "modified" files when opening the repo in
+# the Linux devcontainer from a Windows host.
+* text=auto eol=lf
+
+# Explicit text files
+*.go         text eol=lf
+*.mod        text eol=lf
+*.sum        text eol=lf
+*.tf         text eol=lf
+*.tfvars     text eol=lf
+*.hcl        text eol=lf
+*.json       text eol=lf
+*.md         text eol=lf
+*.sh         text eol=lf
+*.yml        text eol=lf
+*.yaml       text eol=lf
+Makefile     text eol=lf
+GNUmakefile  text eol=lf
+
+# Known binary types — never touch
+*.png        binary
+*.jpg        binary
+*.jpeg       binary
+*.gif        binary
+*.ico        binary
+*.zip        binary
+*.gz         binary
