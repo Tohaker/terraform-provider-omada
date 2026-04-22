@@ -84,7 +84,7 @@ func (r *siteResource) Metadata(_ context.Context, req resource.MetadataRequest,
 // Schema defines the schema for the resource.
 func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a site.",
+		Description: "Manages a site. Your credentials must have the `Global Dashboard Manager Modify` permission.",
 		Attributes: map[string]schema.Attribute{
 			"site_id": schema.StringAttribute{
 				Description: "Site ID",
@@ -94,37 +94,37 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				},
 			},
 			"name": schema.StringAttribute{
-				Description: "Name of the site should contain 1 to 64 characters.",
+				Description: "Name of the site. This must contain 1 to 64 characters and cannot be the same as any existing site.",
 				Required:    true,
 			},
 			"type": schema.Int32Attribute{
-				Description: "Type of the site should be 0 or 1, and 0 means basic site, 1 means pro site.",
+				Description: "Type of the site (0 or 1).\n 0 means a Basic site, 1 means a Pro site.",
 				Optional:    true,
 				Computed:    true,
 			},
 			"region": schema.StringAttribute{
-				Description: `Country/Region of the site; For the values of region, refer to the abbreviation of the ISO country code; For example, you need to input "United States" for the United States of America.`,
+				Description: "The Country/Region of the site; For the values of `region`, refer to the abbreviation of the ISO country code; For example, \"United States\" refers to the United States of America.",
 				Required:    true,
 			},
 			"time_zone": schema.StringAttribute{
-				Description: "For the values of the timezone of the site, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).",
+				Description: "Time zone of the site. For possible values, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).",
 				Required:    true,
 			},
 			"scenario": schema.StringAttribute{
-				Description: "For the values of the scenario of the site, refer to result of the interface for Get scenario list.",
+				Description: "Scenario in which the site is deployed. For the values of the scenario of the site, refer to result of the interface for [Get scenario list](https://use1-omada-northbound.tplinkcloud.com/doc.html#/00%20All/Site/getScenarioList).",
 				Required:    true,
 			},
 			"tag_ids": schema.ListAttribute{
-				Description: "Site tag ID",
+				Description: "List of site tag ids.",
 				ElementType: types.StringType,
 				Optional:    true,
 			},
 			"longitude": schema.Float64Attribute{
-				Description: "Longitude of the site should be within the range of -180 - 180.",
+				Description: "Longitude of the site. Must be within the range of -180 - 180.",
 				Optional:    true,
 			},
 			"latitude": schema.Float64Attribute{
-				Description: "Latitude of the site should be within the range of -90 - 90.",
+				Description: "Latitude of the site. Must be within the range of -90 - 90.",
 				Optional:    true,
 			},
 			"address": schema.StringAttribute{
@@ -136,11 +136,11 @@ func (r *siteResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 				Required:    true,
 				Attributes: map[string]schema.Attribute{
 					"username": schema.StringAttribute{
-						Description: "Device account username should contain 1 to 64 ASCII characters.",
+						Description: "Device account username. Must contain 1 to 64 ASCII characters.",
 						Required:    true,
 					},
 					"password": schema.StringAttribute{
-						Description: "Device account parameter [password] should contain 10 to 64 ASCII characters. And passwords must be a combination of uppercase letters, lowercase letters, numbers, and special symbols. Symbols such as ! # $ % & * @ ^ are supported.\nThe password should not contain consecutive identical characters.\nUsername and Password should not be the same.",
+						Description: "Device account password. Must contain 10 to 64 ASCII characters.\nPasswords must be a combination of uppercase letters, lowercase letters, numbers, and special symbols. Symbols such as `!`, `#`, `$`, `%`, `&`, `*`, `@` and `^` are supported.\nThe password should not contain consecutive identical characters.\nUsername and Password should not be the same.",
 						Required:    true,
 						Sensitive:   true,
 					},

@@ -3,30 +3,44 @@
 page_title: "omada_site Resource - omada"
 subcategory: ""
 description: |-
-  Manages a site.
+  Manages a site. Your credentials must have the Global Dashboard Manager Modify permission.
 ---
 
 # omada_site (Resource)
 
-Manages a site.
+Manages a site. Your credentials must have the `Global Dashboard Manager Modify` permission.
 
 ## Example Usage
 
 ```terraform
+# Set a variable to store the site password securely
 variable "site_password" {
-  type = string
+  type      = string
+  sensitive = true
 }
 
 resource "omada_site" "example" {
   name      = "Example"
+  type      = 0
   region    = "United Kingdom"
   time_zone = "Europe/London"
   scenario  = "Home"
+  tag_ids = [
+    "tag_id_1",
+    "tag_id_2"
+  ]
+  longitude = -0.124681
+  latitude  = 51.500786
+  address   = "123 Fake Street"
 
   device_account_setting = {
     username = "admin"
     password = var.site_password
   }
+}
+
+output "home_site_id" {
+  value = omada_site.example.site_id
 }
 ```
 
@@ -36,20 +50,21 @@ resource "omada_site" "example" {
 ### Required
 
 - `device_account_setting` (Attributes) Login information for devices. (see [below for nested schema](#nestedatt--device_account_setting))
-- `name` (String) Name of the site should contain 1 to 64 characters.
-- `region` (String) Country/Region of the site; For the values of region, refer to the abbreviation of the ISO country code; For example, you need to input "United States" for the United States of America.
-- `scenario` (String) For the values of the scenario of the site, refer to result of the interface for Get scenario list.
-- `time_zone` (String) For the values of the timezone of the site, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).
+- `name` (String) Name of the site. This must contain 1 to 64 characters and cannot be the same as any existing site.
+- `region` (String) The Country/Region of the site; For the values of `region`, refer to the abbreviation of the ISO country code; For example, "United States" refers to the United States of America.
+- `scenario` (String) Scenario in which the site is deployed. For the values of the scenario of the site, refer to result of the interface for [Get scenario list](https://use1-omada-northbound.tplinkcloud.com/doc.html#/00%20All/Site/getScenarioList).
+- `time_zone` (String) Time zone of the site. For possible values, refer to section 5.1 of the [Open API Access Guide](https://use1-omada-northbound.tplinkcloud.com/doc.html#/home).
 
 ### Optional
 
 - `address` (String) Address of the site.
-- `latitude` (Number) Latitude of the site should be within the range of -90 - 90.
-- `longitude` (Number) Longitude of the site should be within the range of -180 - 180.
+- `latitude` (Number) Latitude of the site. Must be within the range of -90 - 90.
+- `longitude` (Number) Longitude of the site. Must be within the range of -180 - 180.
 - `support_es` (Boolean) Whether the site supports adopting Agile Series Switches.
 - `support_l2` (Boolean) Whether the site supports adopting Non-Agile Series Switches.
-- `tag_ids` (List of String) Site tag ID
-- `type` (Number) Type of the site should be 0 or 1, and 0 means basic site, 1 means pro site.
+- `tag_ids` (List of String) List of site tag ids.
+- `type` (Number) Type of the site (0 or 1).
+ 0 means a Basic site, 1 means a Pro site.
 
 ### Read-Only
 
@@ -60,10 +75,11 @@ resource "omada_site" "example" {
 
 Required:
 
-- `password` (String, Sensitive) Device account parameter [password] should contain 10 to 64 ASCII characters. And passwords must be a combination of uppercase letters, lowercase letters, numbers, and special symbols. Symbols such as ! # $ % & * @ ^ are supported.
+- `password` (String, Sensitive) Device account password. Must contain 10 to 64 ASCII characters.
+Passwords must be a combination of uppercase letters, lowercase letters, numbers, and special symbols. Symbols such as `!`, `#`, `$`, `%`, `&`, `*`, `@` and `^` are supported.
 The password should not contain consecutive identical characters.
 Username and Password should not be the same.
-- `username` (String) Device account username should contain 1 to 64 ASCII characters.
+- `username` (String) Device account username. Must contain 1 to 64 ASCII characters.
 
 ## Import
 
