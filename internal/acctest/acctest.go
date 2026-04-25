@@ -21,23 +21,44 @@ provider "omada" {
 `, host, TestControllerID)
 }
 
-func NewTestServer(t *testing.T) (*http.ServeMux, string) {
-	t.Helper()
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST /openapi/authorize/token", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"errorCode": 0,
-			"msg":       "Open API Get Access Token successfully.",
-			"result": map[string]any{
-				"accessToken":  "AT-test",
-				"tokenType":    "bearer",
-				"expiresIn":    7200,
-				"refreshToken": "RT-test",
-			},
-		})
+// TestServer is a configurable httptest-backed Omada API stand-in.
+//
+// TokenHandler is invoked for POST /openapi/authorize/token requests. Tests may
+// reassign it after construction to simulate alternate token-endpoint behavior
+// (e.g. error responses) without re-registering on the underlying mux.
+type TestServer struct {
+	Mux            *http.ServeMux
+	URL            string
+	ProviderConfig string
+	TokenHandler   http.HandlerFunc
+}
+
+func defaultTokenHandler(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"errorCode": 0,
+		"msg":       "Open API Get Access Token successfully.",
+		"result": map[string]any{
+			"accessToken":  "AT-test",
+			"tokenType":    "bearer",
+			"expiresIn":    7200,
+			"refreshToken": "RT-test",
+		},
 	})
-	server := httptest.NewServer(mux)
+}
+
+func NewTestServer(t *testing.T) *TestServer {
+	t.Helper()
+	ts := &TestServer{
+		Mux:          http.NewServeMux(),
+		TokenHandler: defaultTokenHandler,
+	}
+	ts.Mux.HandleFunc("POST /openapi/authorize/token", func(w http.ResponseWriter, r *http.Request) {
+		ts.TokenHandler(w, r)
+	})
+	server := httptest.NewServer(ts.Mux)
 	t.Cleanup(server.Close)
-	return mux, providerConfig(server.URL)
+	ts.URL = server.URL
+	ts.ProviderConfig = providerConfig(server.URL)
+	return ts
 }

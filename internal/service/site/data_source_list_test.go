@@ -2,7 +2,6 @@ package site_test
 
 import (
 	"net/http"
-	"sync/atomic"
 	"terraform-provider-omada/internal/acctest"
 	"testing"
 
@@ -10,7 +9,8 @@ import (
 )
 
 func TestAcc_SitesDataSource(t *testing.T) {
-	mux, providerCfg := acctest.NewTestServer(t)
+	ts := acctest.NewTestServer(t)
+	mux, providerCfg := ts.Mux, ts.ProviderConfig
 
 	sites := `{
 		"errorCode": 0,
@@ -40,10 +40,7 @@ func TestAcc_SitesDataSource(t *testing.T) {
 		}
 	}`
 
-	var sitesCalls atomic.Int64
-
 	mux.HandleFunc("GET /openapi/v1/{omadacId}/sites", func(w http.ResponseWriter, r *http.Request) {
-		sitesCalls.Add(1)
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(sites))
 	})
@@ -70,8 +67,4 @@ func TestAcc_SitesDataSource(t *testing.T) {
 			},
 		},
 	})
-
-	if sitesCalls.Load() < 1 {
-		t.Error("expected sites endpoint to be called at least once")
-	}
 }

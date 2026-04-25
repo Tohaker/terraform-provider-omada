@@ -11,7 +11,8 @@ import (
 )
 
 func TestAcc_SiteResource(t *testing.T) {
-	mux, providerCfg := acctest.NewTestServer(t)
+	ts := acctest.NewTestServer(t)
+	mux, providerCfg := ts.Mux, ts.ProviderConfig
 
 	readResponse := `{
 		"errorCode": 0,
