@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"terraform-provider-omada/internal/client"
 
-	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -156,28 +155,9 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Generate API request body from plan
-	var siteEntity omada.CreateSiteEntity
-	siteEntity.Name = plan.Name.ValueString()
-	siteEntity.Type = plan.Type.ValueInt32Pointer()
-	siteEntity.Region = plan.Region.ValueString()
-	siteEntity.TimeZone = plan.TimeZone.ValueString()
-	siteEntity.Scenario = plan.Scenario.ValueString()
-	siteEntity.Longitude = plan.Longitude.ValueFloat64Pointer()
-	siteEntity.Latitude = plan.Latitude.ValueFloat64Pointer()
-	siteEntity.Address = plan.Address.ValueStringPointer()
-	siteEntity.DeviceAccountSetting = omada.DeviceAccountSettingOpenApiVO{
-		Username: plan.DeviceAccountSetting.Username.ValueString(),
-		Password: plan.DeviceAccountSetting.Password.ValueString(),
-	}
-	siteEntity.SupportES = plan.SupportES.ValueBoolPointer()
-	siteEntity.SupportL2 = plan.SupportL2.ValueBoolPointer()
-
-	var tagIds []string
-	for _, tagId := range plan.TagIDs {
-		tagIds = append(tagIds, tagId.ValueString())
-	}
-
-	siteEntity.TagIds = tagIds
+	siteEntity := expandCreateSiteEntity(plan)
+	siteEntity.TagIds = expandTagIds(&plan.TagIDs)
+	siteEntity.DeviceAccountSetting = expandDeviceAccountSetting(plan.DeviceAccountSetting)
 
 	// Create new site
 	site, _, err := r.client.SiteAPI.CreateNewSite(ctx, r.omadacId).CreateSiteEntity(siteEntity).Execute()
@@ -290,27 +270,9 @@ func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Generate API request body from plan
-	var siteEntity omada.UpdateSiteEntity
-	siteEntity.Name = plan.Name.ValueStringPointer()
-	siteEntity.Region = plan.Region.ValueString()
-	siteEntity.TimeZone = plan.TimeZone.ValueString()
-	siteEntity.Scenario = plan.Scenario.ValueString()
-	siteEntity.Longitude = plan.Longitude.ValueFloat64Pointer()
-	siteEntity.Latitude = plan.Latitude.ValueFloat64Pointer()
-	siteEntity.Address = plan.Address.ValueStringPointer()
-	siteEntity.SupportES = plan.SupportES.ValueBoolPointer()
-	siteEntity.SupportL2 = plan.SupportL2.ValueBoolPointer()
-
-	var tagIds []string
-	for _, tagId := range plan.TagIDs {
-		tagIds = append(tagIds, tagId.ValueString())
-	}
-
-	siteEntity.TagIds = tagIds
-
-	var siteDeviceAccountSetting omada.DeviceAccountSettingOpenApiVO
-	siteDeviceAccountSetting.Username = plan.DeviceAccountSetting.Username.ValueString()
-	siteDeviceAccountSetting.Password = plan.DeviceAccountSetting.Password.ValueString()
+	siteEntity := expandUpdateSiteEntity(plan)
+	siteEntity.TagIds = expandTagIds(&plan.TagIDs)
+	siteDeviceAccountSetting := expandDeviceAccountSetting(plan.DeviceAccountSetting)
 
 	// Update existing site
 	site, _, err := r.client.SiteAPI.UpdateSiteEntity(ctx, r.omadacId, plan.SiteId.ValueString()).UpdateSiteEntity(siteEntity).Execute()
