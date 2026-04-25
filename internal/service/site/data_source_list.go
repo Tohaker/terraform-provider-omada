@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"terraform-provider-omada/internal/client"
 
-	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -24,30 +23,7 @@ func NewDataSourceList() datasource.DataSource {
 
 // sitesDataSource is the data source implementation.
 type sitesDataSource struct {
-	client   *omada.APIClient
-	omadacId string
-}
-
-// sitesDataSourceModel maps the data source schema data.
-type sitesDataSourceModel struct {
-	Sites []sitesModel `tfsdk:"sites"`
-}
-
-// sitesModel maps sites schema data.
-type sitesModel struct {
-	SiteID       types.String   `tfsdk:"site_id"`
-	Name         types.String   `tfsdk:"name"`
-	TagIDs       []types.String `tfsdk:"tag_ids"`
-	Region       types.String   `tfsdk:"region"`
-	TimeZone     types.String   `tfsdk:"time_zone"`
-	Scenario     types.String   `tfsdk:"scenario"`
-	Longitude    types.Float64  `tfsdk:"longitude"`
-	Latitude     types.Float64  `tfsdk:"latitude"`
-	Address      types.String   `tfsdk:"address"`
-	Type         types.Int32    `tfsdk:"type"`
-	SupportES    types.Bool     `tfsdk:"support_es"`
-	SupportL2    types.Bool     `tfsdk:"support_l2"`
-	SitePublicIP types.String   `tfsdk:"site_public_ip"`
+	siteClient
 }
 
 // Configure adds the provider configured client to the data source.
@@ -163,20 +139,20 @@ func (d *sitesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 	sites := response.Result.Data
 
 	for _, site := range sites {
-		siteState := sitesModel{
-			SiteID:       types.StringPointerValue(site.SiteId),
-			Name:         types.StringPointerValue(site.Name),
-			Region:       types.StringPointerValue(site.Region),
-			TimeZone:     types.StringPointerValue(site.TimeZone),
-			Scenario:     types.StringPointerValue(site.Scenario),
-			Longitude:    types.Float64PointerValue(site.Longitude),
-			Latitude:     types.Float64PointerValue(site.Latitude),
-			Address:      types.StringPointerValue(site.Address),
-			Type:         types.Int32PointerValue(site.Type),
-			SupportES:    types.BoolPointerValue(site.SupportES),
-			SupportL2:    types.BoolPointerValue(site.SupportL2),
-			SitePublicIP: types.StringPointerValue(site.SitePublicIp),
-		}
+		var siteState siteModel
+
+		siteState.SiteId = types.StringPointerValue(site.SiteId)
+		siteState.Name = types.StringPointerValue(site.Name)
+		siteState.Region = types.StringPointerValue(site.Region)
+		siteState.TimeZone = types.StringPointerValue(site.TimeZone)
+		siteState.Scenario = types.StringPointerValue(site.Scenario)
+		siteState.Longitude = types.Float64PointerValue(site.Longitude)
+		siteState.Latitude = types.Float64PointerValue(site.Latitude)
+		siteState.Address = types.StringPointerValue(site.Address)
+		siteState.Type = types.Int32PointerValue(site.Type)
+		siteState.SupportES = types.BoolPointerValue(site.SupportES)
+		siteState.SupportL2 = types.BoolPointerValue(site.SupportL2)
+		siteState.SitePublicIP = types.StringPointerValue(site.SitePublicIp)
 
 		for _, tagId := range site.TagIds {
 			siteState.TagIDs = append(siteState.TagIDs, types.StringValue(tagId))

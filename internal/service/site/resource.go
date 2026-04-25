@@ -28,31 +28,7 @@ func NewResource() resource.Resource {
 
 // siteResource is the resource implementation.
 type siteResource struct {
-	client   *omada.APIClient
-	omadacId string
-}
-
-// siteResourceModel maps the resource schema data.
-type siteResourceModel struct {
-	SiteId               types.String                   `tfsdk:"site_id"`
-	Name                 types.String                   `tfsdk:"name"`
-	Type                 types.Int32                    `tfsdk:"type"`
-	Region               types.String                   `tfsdk:"region"`
-	TimeZone             types.String                   `tfsdk:"time_zone"`
-	Scenario             types.String                   `tfsdk:"scenario"`
-	TagIDs               []types.String                 `tfsdk:"tag_ids"`
-	Longitude            types.Float64                  `tfsdk:"longitude"`
-	Latitude             types.Float64                  `tfsdk:"latitude"`
-	Address              types.String                   `tfsdk:"address"`
-	DeviceAccountSetting *siteDeviceAccountSettingModel `tfsdk:"device_account_setting"`
-	SupportES            types.Bool                     `tfsdk:"support_es"`
-	SupportL2            types.Bool                     `tfsdk:"support_l2"`
-}
-
-// siteDeviceAccountSettingModel maps device account settings data.
-type siteDeviceAccountSettingModel struct {
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
+	siteClient
 }
 
 // Configure adds the provider configured client to the resource.
