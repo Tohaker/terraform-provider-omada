@@ -47,8 +47,8 @@ func TestNew_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if meta.OmadacID != controllerId {
-		t.Errorf("OmadaID value: %q", meta.OmadacID)
+	if meta.OmadacId != controllerId {
+		t.Errorf("OmadaID value: %q", meta.OmadacId)
 	}
 
 	if receivedGrant != "client_credentials" {

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 	"terraform-provider-omada/internal/client"
+	"terraform-provider-omada/internal/service/site"
 
-	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -45,19 +45,6 @@ type omadaProviderModel struct {
 	ControllerId types.String `tfsdk:"controller_id"`
 	ClientId     types.String `tfsdk:"client_id"`
 	ClientSecret types.String `tfsdk:"client_secret"`
-}
-
-type providerData struct {
-	Client   *omada.APIClient
-	OmadacId string
-}
-
-var newOmadaHTTPClient = func() *http.Client {
-	return &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		},
-	}
 }
 
 // Metadata returns the provider type name.
@@ -251,13 +238,8 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	data := &providerData{
-		Client:   meta.Client,
-		OmadacId: meta.OmadacID,
-	}
-
-	resp.DataSourceData = data
-	resp.ResourceData = data
+	resp.DataSourceData = meta
+	resp.ResourceData = meta
 
 	tflog.Info(ctx, "Configured Omada client", map[string]any{"success": true})
 }
@@ -265,13 +247,13 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 // DataSources defines the data sources implemented in the provider.
 func (p *omadaProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewSitesDataSource,
+		site.NewDataSourceList,
 	}
 }
 
 // Resources defines the resources implemented in the provider.
 func (p *omadaProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewSiteResource,
+		site.NewResource,
 	}
 }

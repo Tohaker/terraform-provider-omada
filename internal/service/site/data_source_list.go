@@ -1,8 +1,9 @@
-package provider
+package site
 
 import (
 	"context"
 	"fmt"
+	"terraform-provider-omada/internal/client"
 
 	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -16,8 +17,8 @@ var (
 	_ datasource.DataSourceWithConfigure = &sitesDataSource{}
 )
 
-// NewSitesDataSource is a helper function to simplify the provider implementation.
-func NewSitesDataSource() datasource.DataSource {
+// NewDataSourceList is a helper function to simplify the provider implementation.
+func NewDataSourceList() datasource.DataSource {
 	return &sitesDataSource{}
 }
 
@@ -57,7 +58,7 @@ func (d *sitesDataSource) Configure(_ context.Context, req datasource.ConfigureR
 		return
 	}
 
-	data, ok := req.ProviderData.(*providerData)
+	data, ok := req.ProviderData.(*client.Meta)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",

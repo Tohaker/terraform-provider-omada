@@ -15,7 +15,7 @@ type Config struct {
 
 type Meta struct {
 	Client   *omada.APIClient
-	OmadacID string
+	OmadacId string
 }
 
 func New(ctx context.Context, cfg Config) (*Meta, error) {
@@ -52,6 +52,6 @@ func New(ctx context.Context, cfg Config) (*Meta, error) {
 
 	return &Meta{
 		Client:   client,
-		OmadacID: cfg.ControllerID,
+		OmadacId: cfg.ControllerID,
 	}, nil
 }

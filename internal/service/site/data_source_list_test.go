@@ -1,15 +1,16 @@
-package provider
+package site_test
 
 import (
 	"net/http"
 	"sync/atomic"
+	"terraform-provider-omada/internal/acctest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAcc_SitesDataSource(t *testing.T) {
-	mux, providerCfg := newTestServer(t)
+	mux, providerCfg := acctest.NewTestServer(t)
 
 	sites := `{
 		"errorCode": 0,
@@ -48,7 +49,7 @@ func TestAcc_SitesDataSource(t *testing.T) {
 	})
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read testing
 			{

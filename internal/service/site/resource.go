@@ -1,8 +1,9 @@
-package provider
+package site
 
 import (
 	"context"
 	"fmt"
+	"terraform-provider-omada/internal/client"
 
 	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -20,8 +21,8 @@ var (
 	_ resource.ResourceWithImportState = &siteResource{}
 )
 
-// NewSiteResource is a helper function to simplify the provider implementation.
-func NewSiteResource() resource.Resource {
+// NewResource is a helper function to simplify the provider implementation.
+func NewResource() resource.Resource {
 	return &siteResource{}
 }
 
@@ -62,7 +63,7 @@ func (d *siteResource) Configure(_ context.Context, req resource.ConfigureReques
 		return
 	}
 
-	data, ok := req.ProviderData.(*providerData)
+	data, ok := req.ProviderData.(*client.Meta)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
