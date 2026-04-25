@@ -7,30 +7,10 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/jarcoal/httpmock"
 )
 
-func TestAccSiteResource(t *testing.T) {
-	activateHTTPMock(t)
-
-	createResponse := `{
-		"errorCode": 0,
-		"msg": "",
-		"result": {
-			"siteId": "test-site-id"
-		}
-	}`
-
-	httpmock.RegisterResponder(
-		"POST",
-		`=~^.*/openapi/v1/.*/sites$`,
-		httpmock.NewStringResponder(
-			http.StatusOK,
-			createResponse,
-		).HeaderSet(http.Header{
-			"Content-Type": []string{"application/json"},
-		}),
-	)
+func TestAcc_SiteResource(t *testing.T) {
+	mux, providerCfg := newTestServer(t)
 
 	readResponse := `{
 		"errorCode": 0,
@@ -53,16 +33,6 @@ func TestAccSiteResource(t *testing.T) {
 		}
 	}`
 
-	httpmock.RegisterResponder(
-		"GET",
-		`=~^.*/openapi/v1/.*/sites/test-site-id$`,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(http.StatusOK, readResponse)
-			resp.Header.Set("Content-Type", "application/json")
-			return resp, nil
-		},
-	)
-
 	readDeviceAccountResponse := `{
 		"errorCode": 0,
 		"msg": "",
@@ -72,105 +42,101 @@ func TestAccSiteResource(t *testing.T) {
 		}
 	}`
 
-	httpmock.RegisterResponder(
-		"GET",
-		`=~^.*/openapi/v1/.*/sites/test-site-id/device-account$`,
-		func(req *http.Request) (*http.Response, error) {
-			resp := httpmock.NewStringResponse(http.StatusOK, readDeviceAccountResponse)
-			resp.Header.Set("Content-Type", "application/json")
-			return resp, nil
-		},
-	)
+	const emptyResponse = `{ "errorCode": 0, "msg": "" }`
 
-	emptyStringResponse := `{ "errorCode": 0, "msg": "" }`
+	writeJSON := func(w http.ResponseWriter, body string) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}
 
-	emptyStringResponder := httpmock.NewStringResponder(
-		http.StatusOK,
-		emptyStringResponse,
-	).HeaderSet(http.Header{
-		"Content-Type": []string{"application/json"},
+	// Create
+	mux.HandleFunc("POST /openapi/v1/{omadacId}/sites", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, `{
+			"errorCode": 0,
+			"msg": "",
+			"result": { "siteId": "test-site-id" }
+		}`)
 	})
 
-	httpmock.RegisterResponder(
-		"PUT",
-		"=~^.*/openapi/v1/.*/sites/test-site-id$",
-		func(req *http.Request) (*http.Response, error) {
-			newSite := make(map[string]any)
-			if err := json.NewDecoder(req.Body).Decode(&newSite); err != nil {
-				return httpmock.NewStringResponse(400, ""), err
+	// Read site
+	mux.HandleFunc("GET /openapi/v1/{omadacId}/sites/{siteId}", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, readResponse)
+	})
+
+	// Read device account
+	mux.HandleFunc("GET /openapi/v1/{omadacId}/sites/{siteId}/device-account", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, readDeviceAccountResponse)
+	})
+
+	// Update site
+	mux.HandleFunc("PUT /openapi/v1/{omadacId}/sites/{siteId}", func(w http.ResponseWriter, r *http.Request) {
+		newSite := make(map[string]any)
+		if err := json.NewDecoder(r.Body).Decode(&newSite); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		readResponse = fmt.Sprintf(`{
+			"errorCode": 0,
+			"msg": "",
+			"result": {
+				"siteId": "test-site-id",
+				"name": "%s",
+				"type": 0,
+				"tagIds": [],
+				"region": "%s",
+				"timeZone": "%s",
+				"ntpEnable": true,
+				"ntpServers": [],
+				"scenario": "%s",
+				"longitude": null,
+				"latitude": null,
+				"address": null,
+				"supportES": true,
+				"supportL2": true
 			}
+		}`,
+			newSite["name"],
+			newSite["region"],
+			newSite["timeZone"],
+			newSite["scenario"])
 
-			readResponse = fmt.Sprintf(`{
-				"errorCode": 0,
-				"msg": "",
-				"result": {
-					"siteId": "test-site-id",
-					"name": "%s",
-					"type": 0,
-					"tagIds": [],
-					"region": "%s",
-					"timeZone": "%s",
-					"ntpEnable": true,
-					"ntpServers": [],
-					"scenario": "%s",
-					"longitude": null,
-					"latitude": null,
-					"address": null,
-					"supportES": true,
-					"supportL2": true
-				}
-			}`,
-				newSite["name"],
-				newSite["region"],
-				newSite["timeZone"],
-				newSite["scenario"])
+		writeJSON(w, emptyResponse)
+	})
 
-			resp := httpmock.NewStringResponse(http.StatusOK, emptyStringResponse)
-			resp.Header.Add("Content-Type", "application/json")
+	// Update device account
+	mux.HandleFunc("PUT /openapi/v1/{omadacId}/sites/{siteId}/device-account", func(w http.ResponseWriter, r *http.Request) {
+		deviceAccount := make(map[string]any)
+		if err := json.NewDecoder(r.Body).Decode(&deviceAccount); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 
-			return resp, nil
-		},
-	)
-
-	httpmock.RegisterResponder(
-		"PUT",
-		`=~^.*/openapi/v1/.*/sites/test-site-id/device-account$`,
-		func(r *http.Request) (*http.Response, error) {
-			deviceAccount := make(map[string]any)
-			if err := json.NewDecoder(r.Body).Decode(&deviceAccount); err != nil {
-				return httpmock.NewStringResponse(400, ""), err
+		readDeviceAccountResponse = fmt.Sprintf(`{
+			"errorCode": 0,
+			"msg": "",
+			"result": {
+				"username": "%s",
+				"password": "%s"
 			}
+		}`,
+			deviceAccount["username"],
+			deviceAccount["password"])
 
-			readDeviceAccountResponse = fmt.Sprintf(`{
-				"errorCode": 0,
-				"msg": "",
-				"result": {
-					"username": "%s",
-					"password": "%s"
-				}
-			}`,
-				deviceAccount["username"],
-				deviceAccount["password"])
+		writeJSON(w, emptyResponse)
+	})
 
-			resp := httpmock.NewStringResponse(http.StatusOK, emptyStringResponse)
-			resp.Header.Add("Content-Type", "application/json")
-
-			return resp, nil
-		},
-	)
-
-	httpmock.RegisterResponder(
-		"DELETE",
-		"=~^.*/openapi/v1/.*/sites/.*$",
-		emptyStringResponder,
-	)
+	// Delete
+	mux.HandleFunc("DELETE /openapi/v1/{omadacId}/sites/{siteId}", func(w http.ResponseWriter, r *http.Request) {
+		writeJSON(w, emptyResponse)
+	})
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: providerConfig + `
+				Config: providerCfg + `
 				resource "omada_site" "test" {
 					name      = "Test Site"
 					region    = "United Kingdom"
@@ -209,7 +175,7 @@ func TestAccSiteResource(t *testing.T) {
 			},
 			// Update and Read testing
 			{
-				Config: providerConfig + `
+				Config: providerCfg + `
 				resource "omada_site" "test" {
 					name      = "Updated Site"
 					region    = "United States"

@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
+	"terraform-provider-omada/internal/client"
 
 	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -225,21 +226,20 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	tflog.Debug(ctx, "Creating Omada client")
 
-	// Create a new Omada client using the configuration values
-	cfg := omada.NewConfiguration()
-	cfg.Servers = omada.ServerConfigurations{
-		{URL: host},
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			// TODO: Remove this when testing environment has SSL certification configured
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		},
 	}
 
-	// TODO: Remove this when testing environment has SSL certification configured
-	cfg.HTTPClient = newOmadaHTTPClient()
-	client := omada.NewAPIClient(cfg)
-
-	tokenResp, _, err := client.AuthorizeAPI.AuthorizeToken(context.Background()).GrantType("client_credentials").TokenRequest(omada.TokenRequest{
-		ClientId:     client_id,
+	meta, err := client.New(ctx, client.Config{
+		ClientID:     client_id,
 		ClientSecret: client_secret,
-		OmadacId:     &controller_id,
-	}).Execute()
+		ControllerID: controller_id,
+		Host:         host,
+		HTTPClient:   httpClient,
+	})
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -251,11 +251,9 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	cfg.DefaultHeader["Authorization"] = "AccessToken=" + *tokenResp.Result.AccessToken
-
 	data := &providerData{
-		Client:   client,
-		OmadacId: controller_id,
+		Client:   meta.Client,
+		OmadacId: meta.OmadacID,
 	}
 
 	resp.DataSourceData = data
