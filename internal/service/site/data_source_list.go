@@ -136,27 +136,10 @@ func (d *sitesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	sites := response.Result.Data
-
-	for _, site := range sites {
+	for _, site := range response.Result.Data {
 		var siteState siteModel
 
-		siteState.SiteId = types.StringPointerValue(site.SiteId)
-		siteState.Name = types.StringPointerValue(site.Name)
-		siteState.Region = types.StringPointerValue(site.Region)
-		siteState.TimeZone = types.StringPointerValue(site.TimeZone)
-		siteState.Scenario = types.StringPointerValue(site.Scenario)
-		siteState.Longitude = types.Float64PointerValue(site.Longitude)
-		siteState.Latitude = types.Float64PointerValue(site.Latitude)
-		siteState.Address = types.StringPointerValue(site.Address)
-		siteState.Type = types.Int32PointerValue(site.Type)
-		siteState.SupportES = types.BoolPointerValue(site.SupportES)
-		siteState.SupportL2 = types.BoolPointerValue(site.SupportL2)
-		siteState.SitePublicIP = types.StringPointerValue(site.SitePublicIp)
-
-		for _, tagId := range site.TagIds {
-			siteState.TagIDs = append(siteState.TagIDs, types.StringValue(tagId))
-		}
+		flattenSiteSummaryInfo(&siteState, &site)
 
 		state.Sites = append(state.Sites, siteState)
 	}

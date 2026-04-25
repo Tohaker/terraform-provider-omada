@@ -249,30 +249,12 @@ func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 			"Error reading Device Account",
 			"Could not read Device Account for site ID "+state.SiteId.ValueString()+": "+deviceAccountErr.Error(),
 		)
+		return
 	}
 
 	// Overwrite site with refreshed state
-	state.Name = types.StringPointerValue(site.Result.Name)
-	state.Type = types.Int32PointerValue(site.Result.Type)
-	state.Region = types.StringPointerValue(site.Result.Region)
-	state.TimeZone = types.StringPointerValue(site.Result.TimeZone)
-	state.Scenario = types.StringPointerValue(site.Result.Scenario)
-	state.Longitude = types.Float64PointerValue(site.Result.Longitude)
-	state.Latitude = types.Float64PointerValue(site.Result.Latitude)
-	state.Address = types.StringPointerValue(site.Result.Address)
-	state.SupportES = types.BoolPointerValue(site.Result.SupportES)
-	state.SupportL2 = types.BoolPointerValue(site.Result.SupportL2)
-	state.DeviceAccountSetting = &siteDeviceAccountSettingModel{
-		Username: types.StringValue(deviceAccount.Result.Username),
-		Password: types.StringValue(deviceAccount.Result.Password),
-	}
-
-	var TagIDs []types.String
-	for _, tagId := range site.Result.TagIds {
-		TagIDs = append(TagIDs, types.StringValue(tagId))
-	}
-
-	state.TagIDs = TagIDs
+	flattenSiteEntity(&state, site.Result)
+	state.DeviceAccountSetting = flattenDeviceAccountSettings(deviceAccount.Result)
 
 	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
