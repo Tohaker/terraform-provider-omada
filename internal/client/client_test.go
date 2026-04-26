@@ -62,7 +62,7 @@ func TestNew_Success(t *testing.T) {
 	receivedToken := meta.Client.GetConfig().DefaultHeader["Authorization"]
 
 	if receivedToken != fmt.Sprintf("AccessToken=%s", accessToken) {
-		t.Errorf("Recieved Token: %q", receivedToken)
+		t.Errorf("Received Token: %q", receivedToken)
 	}
 }
 
