@@ -17,7 +17,7 @@ For authentication, the provider requires you to supply the following informatio
 - Host
 - Client ID
 - Client Secret
-- Customer or MSP ID (also referred to as the Omada ID)
+- Controller ID (also referred to as the Omada ID)
 
 For detailed instructions on how to obtain these from your Software Controller, [see here](https://support.omadanetworks.com/uk/document/109315#_Toc212122902).
 
@@ -27,9 +27,11 @@ You may also choose to set these to the following environment variables respecti
 - `OMADA_CLIENT_ID`
 - `OMADA_CLIENT_SECRET`
 - `OMADA_CONTROLLER_ID`
+- `OMADA_TLS_SKIP_VERIFY`
 
 -> If you are self-hosting your Software Controller, the host must be resolvable from wherever your Terraform configuration is deployed. 
-For example, in your local network you may set your host to `https://192.168.0.10:8043`
+For example, in your local network you may set your host to `https://192.168.0.10:8043`. 
+You may also need to set `tls_skip_verify` to `true` if your Software Controller has self-signed certificates. However this is not advisable if you will be deploying the configuration to a production environment. 
 
 ## Example Usage
 
@@ -57,6 +59,9 @@ provider "omada" {
   # Alternatively, omit this field and supply it securely 
   # with the OMADA_CLIENT_SECRET environment variable
   client_secret = var.client_secret
+
+  # Explicitly set the TLS verification setting
+  tls_skip_verify = false
 }
 ```
 
@@ -69,3 +74,5 @@ provider "omada" {
 - `client_secret` (String, Sensitive) Client Secret for the Omada Controller Application. May also be provided via `OMADA_CLIENT_SECRET` environment variable.
 - `controller_id` (String) Unique ID assigned to the Omada Controller. May also be provided via `OMADA_CONTROLLER_ID` environment variable.
 - `host` (String) URI for the Omada Controller API. May also be provided via `OMADA_HOST` environment variable.
+- `tls_skip_verify` (Boolean) When set to true, accepts any certificate presented by the server and any host name in that certificate.
+				**It is unadvisable to use this in a production environment, as it makes the provider susceptible to man-in-the-middle attacks.**
