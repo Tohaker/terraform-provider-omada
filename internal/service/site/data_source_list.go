@@ -136,13 +136,7 @@ func (d *sitesDataSource) Read(ctx context.Context, req datasource.ReadRequest, 
 		return
 	}
 
-	for _, site := range response.Result.Data {
-		var siteState siteModel
-
-		flattenSiteSummaryInfo(&siteState, &site)
-
-		state.Sites = append(state.Sites, siteState)
-	}
+	flattenSites(&state, &response.Result.Data)
 
 	// Set state
 	diags := resp.State.Set(ctx, &state)

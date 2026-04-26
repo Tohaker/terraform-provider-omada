@@ -38,19 +38,26 @@ func flattenSiteEntity(m *siteResourceModel, r *omada.SiteEntity) {
 	flattenTagIds(&m.TagIDs, &r.TagIds)
 }
 
-func flattenSiteSummaryInfo(m *siteModel, r *omada.SiteSummaryInfo) {
-	m.SiteId = types.StringPointerValue(r.SiteId)
-	m.Name = types.StringPointerValue(r.Name)
-	m.Region = types.StringPointerValue(r.Region)
-	m.TimeZone = types.StringPointerValue(r.TimeZone)
-	m.Scenario = types.StringPointerValue(r.Scenario)
-	m.Longitude = types.Float64PointerValue(r.Longitude)
-	m.Latitude = types.Float64PointerValue(r.Latitude)
-	m.Address = types.StringPointerValue(r.Address)
-	m.Type = types.Int32PointerValue(r.Type)
-	m.SupportES = types.BoolPointerValue(r.SupportES)
-	m.SupportL2 = types.BoolPointerValue(r.SupportL2)
-	m.SitePublicIP = types.StringPointerValue(r.SitePublicIp)
+func flattenSites(m *sitesDataSourceModel, r *[]omada.SiteSummaryInfo) {
+	for _, site := range *r {
+		var siteState siteModel
 
-	flattenTagIds(&m.TagIDs, &r.TagIds)
+		siteState.SiteId = types.StringPointerValue(site.SiteId)
+		siteState.Name = types.StringPointerValue(site.Name)
+		siteState.Region = types.StringPointerValue(site.Region)
+		siteState.TimeZone = types.StringPointerValue(site.TimeZone)
+		siteState.Scenario = types.StringPointerValue(site.Scenario)
+		siteState.Longitude = types.Float64PointerValue(site.Longitude)
+		siteState.Latitude = types.Float64PointerValue(site.Latitude)
+		siteState.Address = types.StringPointerValue(site.Address)
+		siteState.Type = types.Int32PointerValue(site.Type)
+		siteState.SupportES = types.BoolPointerValue(site.SupportES)
+		siteState.SupportL2 = types.BoolPointerValue(site.SupportL2)
+		siteState.SitePublicIP = types.StringPointerValue(site.SitePublicIp)
+
+		flattenTagIds(&siteState.TagIDs, &site.TagIds)
+
+		m.Sites = append(m.Sites, siteState)
+	}
+
 }

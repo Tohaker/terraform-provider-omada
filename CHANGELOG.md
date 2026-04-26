@@ -1,3 +1,7 @@
+## 0.1.2
+
+- Updating documentation. No functional changes.
+
 ## 0.1.1
 
 FIXES:
