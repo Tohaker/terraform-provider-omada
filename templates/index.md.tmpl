@@ -17,7 +17,7 @@ For authentication, the provider requires you to supply the following informatio
 - Host
 - Client ID
 - Client Secret
-- Customer or MSP ID (also referred to as the Omada ID)
+- Controller ID (also referred to as the Omada ID)
 
 For detailed instructions on how to obtain these from your Software Controller, [see here](https://support.omadanetworks.com/uk/document/109315#_Toc212122902).
 
@@ -27,9 +27,11 @@ You may also choose to set these to the following environment variables respecti
 - `OMADA_CLIENT_ID`
 - `OMADA_CLIENT_SECRET`
 - `OMADA_CONTROLLER_ID`
+- `OMADA_TLS_SKIP_VERIFY`
 
 -> If you are self-hosting your Software Controller, the host must be resolvable from wherever your Terraform configuration is deployed. 
-For example, in your local network you may set your host to `https://192.168.0.10:8043`
+For example, in your local network you may set your host to `https://192.168.0.10:8043`. 
+You may also need to set `tls_skip_verify` to `true` if your Software Controller has self-signed certificates. However this is not advisable if you will be deploying the configuration to a production environment. 
 
 ## Example Usage
 

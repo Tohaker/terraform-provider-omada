@@ -21,4 +21,7 @@ provider "omada" {
   # Alternatively, omit this field and supply it securely 
   # with the OMADA_CLIENT_SECRET environment variable
   client_secret = var.client_secret
+
+  # Explicitly set the TLS verification setting
+  tls_skip_verify = false
 }
