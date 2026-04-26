@@ -1,15 +1,16 @@
-package provider
+package site_test
 
 import (
 	"net/http"
+	"terraform-provider-omada/internal/acctest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/jarcoal/httpmock"
 )
 
-func TestAccSitesDataSource(t *testing.T) {
-	activateHTTPMock(t)
+func TestAcc_SitesDataSource(t *testing.T) {
+	ts := acctest.NewTestServer(t)
+	mux, providerCfg := ts.Mux, ts.ProviderConfig
 
 	sites := `{
 		"errorCode": 0,
@@ -39,23 +40,17 @@ func TestAccSitesDataSource(t *testing.T) {
 		}
 	}`
 
-	httpmock.RegisterResponder(
-		"GET",
-		`=~^.*/openapi/v1/.*/sites\?page=1&pageSize=1000$`,
-		httpmock.NewStringResponder(
-			http.StatusOK,
-			sites,
-		).HeaderSet(http.Header{
-			"Content-Type": []string{"application/json"},
-		}),
-	)
+	mux.HandleFunc("GET /openapi/v1/{omadacId}/sites", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(sites))
+	})
 
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: providerConfig + `data "omada_sites" "test" {}`,
+				Config: providerCfg + `data "omada_sites" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// Verify number of sites returned
 					resource.TestCheckResourceAttr("data.omada_sites.test", "sites.#", "1"),
@@ -72,11 +67,4 @@ func TestAccSitesDataSource(t *testing.T) {
 			},
 		},
 	})
-
-	info := httpmock.GetCallCountInfo()
-
-	if info[`GET =~^.*/openapi/v1/.*/sites\?page=1&pageSize=1000$`] < 1 {
-		t.Error("expected sites endpoint to be called at least once")
-	}
-
 }

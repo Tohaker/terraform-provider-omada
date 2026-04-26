@@ -1,10 +1,10 @@
-package provider
+package site
 
 import (
 	"context"
 	"fmt"
+	"terraform-provider-omada/internal/client"
 
-	"github.com/Tohaker/omada-go-sdk/omada"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -20,38 +20,14 @@ var (
 	_ resource.ResourceWithImportState = &siteResource{}
 )
 
-// NewSiteResource is a helper function to simplify the provider implementation.
-func NewSiteResource() resource.Resource {
+// NewResource is a helper function to simplify the provider implementation.
+func NewResource() resource.Resource {
 	return &siteResource{}
 }
 
 // siteResource is the resource implementation.
 type siteResource struct {
-	client   *omada.APIClient
-	omadacId string
-}
-
-// siteResourceModel maps the resource schema data.
-type siteResourceModel struct {
-	SiteId               types.String                   `tfsdk:"site_id"`
-	Name                 types.String                   `tfsdk:"name"`
-	Type                 types.Int32                    `tfsdk:"type"`
-	Region               types.String                   `tfsdk:"region"`
-	TimeZone             types.String                   `tfsdk:"time_zone"`
-	Scenario             types.String                   `tfsdk:"scenario"`
-	TagIDs               []types.String                 `tfsdk:"tag_ids"`
-	Longitude            types.Float64                  `tfsdk:"longitude"`
-	Latitude             types.Float64                  `tfsdk:"latitude"`
-	Address              types.String                   `tfsdk:"address"`
-	DeviceAccountSetting *siteDeviceAccountSettingModel `tfsdk:"device_account_setting"`
-	SupportES            types.Bool                     `tfsdk:"support_es"`
-	SupportL2            types.Bool                     `tfsdk:"support_l2"`
-}
-
-// siteDeviceAccountSettingModel maps device account settings data.
-type siteDeviceAccountSettingModel struct {
-	Username types.String `tfsdk:"username"`
-	Password types.String `tfsdk:"password"`
+	siteClient
 }
 
 // Configure adds the provider configured client to the resource.
@@ -62,7 +38,7 @@ func (d *siteResource) Configure(_ context.Context, req resource.ConfigureReques
 		return
 	}
 
-	data, ok := req.ProviderData.(*providerData)
+	data, ok := req.ProviderData.(*client.Meta)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -179,28 +155,9 @@ func (r *siteResource) Create(ctx context.Context, req resource.CreateRequest, r
 	}
 
 	// Generate API request body from plan
-	var siteEntity omada.CreateSiteEntity
-	siteEntity.Name = plan.Name.ValueString()
-	siteEntity.Type = plan.Type.ValueInt32Pointer()
-	siteEntity.Region = plan.Region.ValueString()
-	siteEntity.TimeZone = plan.TimeZone.ValueString()
-	siteEntity.Scenario = plan.Scenario.ValueString()
-	siteEntity.Longitude = plan.Longitude.ValueFloat64Pointer()
-	siteEntity.Latitude = plan.Latitude.ValueFloat64Pointer()
-	siteEntity.Address = plan.Address.ValueStringPointer()
-	siteEntity.DeviceAccountSetting = omada.DeviceAccountSettingOpenApiVO{
-		Username: plan.DeviceAccountSetting.Username.ValueString(),
-		Password: plan.DeviceAccountSetting.Password.ValueString(),
-	}
-	siteEntity.SupportES = plan.SupportES.ValueBoolPointer()
-	siteEntity.SupportL2 = plan.SupportL2.ValueBoolPointer()
-
-	var tagIds []string
-	for _, tagId := range plan.TagIDs {
-		tagIds = append(tagIds, tagId.ValueString())
-	}
-
-	siteEntity.TagIds = tagIds
+	siteEntity := expandCreateSiteEntity(plan)
+	siteEntity.TagIds = expandTagIds(&plan.TagIDs)
+	siteEntity.DeviceAccountSetting = expandDeviceAccountSetting(plan.DeviceAccountSetting)
 
 	// Create new site
 	site, _, err := r.client.SiteAPI.CreateNewSite(ctx, r.omadacId).CreateSiteEntity(siteEntity).Execute()
@@ -272,30 +229,12 @@ func (r *siteResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 			"Error reading Device Account",
 			"Could not read Device Account for site ID "+state.SiteId.ValueString()+": "+deviceAccountErr.Error(),
 		)
+		return
 	}
 
 	// Overwrite site with refreshed state
-	state.Name = types.StringPointerValue(site.Result.Name)
-	state.Type = types.Int32PointerValue(site.Result.Type)
-	state.Region = types.StringPointerValue(site.Result.Region)
-	state.TimeZone = types.StringPointerValue(site.Result.TimeZone)
-	state.Scenario = types.StringPointerValue(site.Result.Scenario)
-	state.Longitude = types.Float64PointerValue(site.Result.Longitude)
-	state.Latitude = types.Float64PointerValue(site.Result.Latitude)
-	state.Address = types.StringPointerValue(site.Result.Address)
-	state.SupportES = types.BoolPointerValue(site.Result.SupportES)
-	state.SupportL2 = types.BoolPointerValue(site.Result.SupportL2)
-	state.DeviceAccountSetting = &siteDeviceAccountSettingModel{
-		Username: types.StringValue(deviceAccount.Result.Username),
-		Password: types.StringValue(deviceAccount.Result.Password),
-	}
-
-	var TagIDs []types.String
-	for _, tagId := range site.Result.TagIds {
-		TagIDs = append(TagIDs, types.StringValue(tagId))
-	}
-
-	state.TagIDs = TagIDs
+	flattenSiteEntity(&state, site.Result)
+	state.DeviceAccountSetting = flattenDeviceAccountSettings(deviceAccount.Result)
 
 	// Set refreshed state
 	diags = resp.State.Set(ctx, &state)
@@ -331,27 +270,9 @@ func (r *siteResource) Update(ctx context.Context, req resource.UpdateRequest, r
 	}
 
 	// Generate API request body from plan
-	var siteEntity omada.UpdateSiteEntity
-	siteEntity.Name = plan.Name.ValueStringPointer()
-	siteEntity.Region = plan.Region.ValueString()
-	siteEntity.TimeZone = plan.TimeZone.ValueString()
-	siteEntity.Scenario = plan.Scenario.ValueString()
-	siteEntity.Longitude = plan.Longitude.ValueFloat64Pointer()
-	siteEntity.Latitude = plan.Latitude.ValueFloat64Pointer()
-	siteEntity.Address = plan.Address.ValueStringPointer()
-	siteEntity.SupportES = plan.SupportES.ValueBoolPointer()
-	siteEntity.SupportL2 = plan.SupportL2.ValueBoolPointer()
-
-	var tagIds []string
-	for _, tagId := range plan.TagIDs {
-		tagIds = append(tagIds, tagId.ValueString())
-	}
-
-	siteEntity.TagIds = tagIds
-
-	var siteDeviceAccountSetting omada.DeviceAccountSettingOpenApiVO
-	siteDeviceAccountSetting.Username = plan.DeviceAccountSetting.Username.ValueString()
-	siteDeviceAccountSetting.Password = plan.DeviceAccountSetting.Password.ValueString()
+	siteEntity := expandUpdateSiteEntity(plan)
+	siteEntity.TagIds = expandTagIds(&plan.TagIDs)
+	siteDeviceAccountSetting := expandDeviceAccountSetting(plan.DeviceAccountSetting)
 
 	// Update existing site
 	site, _, err := r.client.SiteAPI.UpdateSiteEntity(ctx, r.omadacId, plan.SiteId.ValueString()).UpdateSiteEntity(siteEntity).Execute()

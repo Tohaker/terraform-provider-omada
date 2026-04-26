@@ -1,73 +1,136 @@
 package provider
 
 import (
-	"crypto/tls"
+	"encoding/json"
 	"net/http"
-	"os"
+	"regexp"
+	"terraform-provider-omada/internal/acctest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
-	"github.com/jarcoal/httpmock"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-const (
-	// providerConfig is a shared configuration to combine with the actual
-	// test configuration so the Omada client is properly configured.
-	// It is also possible to use the OMADA_ environment variables instead,
-	// such as updating the Makefile and running the testing through that tool.
-	providerConfig = `
-	provider "omada" {
-		host     		= "http://test.omada/api"
-		customer_id 	= "test-customer-id"
-		client_id 		= "test-client-id"
-		client_secret 	= "test-client-secret"
-	}
-	`
-)
+var ProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"omada": providerserver.NewProtocol6WithError(New("test")()),
+}
 
-var (
-	testHTTPClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+func Test_Provider_NoInlineConfig(t *testing.T) {
+	// Ensure env-var fallbacks don't satisfy the provider.
+	t.Setenv("OMADA_HOST", "")
+	t.Setenv("OMADA_CONTROLLER_ID", "")
+	t.Setenv("OMADA_CLIENT_ID", "")
+	t.Setenv("OMADA_CLIENT_SECRET", "")
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					provider "omada" {}
+
+					data "omada_sites" "test" {}
+				`,
+				ExpectError: regexp.MustCompile("Missing Omada API Host"),
+			},
 		},
-	}
-
-	// testAccProtoV6ProviderFactories are used to instantiate a provider during
-	// acceptance testing. The factory function will be invoked for every Terraform
-	// CLI command executed to create a provider server to which the CLI can
-	// reattach.
-	testAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-		"omada": providerserver.NewProtocol6WithError(New("test")()),
-	}
-)
-
-func TestMain(m *testing.M) {
-	newOmadaHTTPClient = func() *http.Client {
-		return testHTTPClient
-	}
-
-	httpmock.ActivateNonDefault(testHTTPClient)
-	code := m.Run()
-	httpmock.DeactivateNonDefault(testHTTPClient)
-	os.Exit(code)
+	})
 }
 
-func activateHTTPMock(t *testing.T) {
-	t.Helper()
-	httpmock.Reset()
-	registerAuthResponder()
-	t.Cleanup(httpmock.Reset)
+func Test_Provider_NoControllerId(t *testing.T) {
+	// Ensure env-var fallbacks don't satisfy the provider.
+	t.Setenv("OMADA_HOST", "")
+	t.Setenv("OMADA_CONTROLLER_ID", "")
+	t.Setenv("OMADA_CLIENT_ID", "")
+	t.Setenv("OMADA_CLIENT_SECRET", "")
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					provider "omada" {
+						host = "https://example.com"
+					}
+
+					data "omada_sites" "test" {}
+				`,
+				ExpectError: regexp.MustCompile("Missing Omada Controller ID"),
+			},
+		},
+	})
 }
 
-func registerAuthResponder() {
-	httpmock.RegisterResponder(
-		"POST",
-		`=~^.*/openapi/authorize/token\?grant_type=client_credentials`,
-		httpmock.NewStringResponder(
-			http.StatusOK,
-			`{"errorCode":0,"msg":"Open API Get Access Token successfully.","result":{"accessToken":"AT-bjaJkIMIiekZY6NBufoQO4hdmJTswlwU","tokenType":"bearer","expiresIn":7200,"refreshToken":"RT-3ZjJgcORJSh76UCh7pj0rs5VRISIpagV"}}`).HeaderSet(http.Header{
-			"Content-Type": []string{"application/json"},
-		}),
-	)
+func Test_Provider_NoClientId(t *testing.T) {
+	// Ensure env-var fallbacks don't satisfy the provider.
+	t.Setenv("OMADA_HOST", "")
+	t.Setenv("OMADA_CONTROLLER_ID", "")
+	t.Setenv("OMADA_CLIENT_ID", "")
+	t.Setenv("OMADA_CLIENT_SECRET", "")
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					provider "omada" {
+						host 		  = "https://example.com"
+						controller_id = "test-controller-id"
+					}
+
+					data "omada_sites" "test" {}
+				`,
+				ExpectError: regexp.MustCompile("Missing Omada API Client ID"),
+			},
+		},
+	})
+}
+
+func Test_Provider_NoClientSecret(t *testing.T) {
+	// Ensure env-var fallbacks don't satisfy the provider.
+	t.Setenv("OMADA_HOST", "")
+	t.Setenv("OMADA_CONTROLLER_ID", "")
+	t.Setenv("OMADA_CLIENT_ID", "")
+	t.Setenv("OMADA_CLIENT_SECRET", "")
+
+	resource.UnitTest(t, resource.TestCase{
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: `
+					provider "omada" {
+						host 		  = "https://example.com"
+						controller_id = "test-controller-id"
+						client_id	  = "test-client-id"
+					}
+
+					data "omada_sites" "test" {}
+				`,
+				ExpectError: regexp.MustCompile("Missing Omada API Client Secret"),
+			},
+		},
+	})
+}
+
+func TestAcc_Provider_ClientCreationFailed(t *testing.T) {
+	ts := acctest.NewTestServer(t)
+
+	ts.TokenHandler = func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"errorCode": -1,
+			"msg":       "No access token found",
+		})
+	}
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: ProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config:      ts.ProviderConfig + `data "omada_sites" "test" {}`,
+				ExpectError: regexp.MustCompile("Unable to create Omada API Client"),
+			},
+		},
+	})
 }
