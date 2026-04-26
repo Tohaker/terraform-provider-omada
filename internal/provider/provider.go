@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"net/http"
 	"os"
+	"strconv"
 	"terraform-provider-omada/internal/client"
 	"terraform-provider-omada/internal/service/site"
 
@@ -41,10 +42,11 @@ type omadaProvider struct {
 
 // omadaProviderModel maps provider schema data to a Go type.
 type omadaProviderModel struct {
-	Host         types.String `tfsdk:"host"`
-	ControllerId types.String `tfsdk:"controller_id"`
-	ClientId     types.String `tfsdk:"client_id"`
-	ClientSecret types.String `tfsdk:"client_secret"`
+	Host          types.String `tfsdk:"host"`
+	ControllerId  types.String `tfsdk:"controller_id"`
+	ClientId      types.String `tfsdk:"client_id"`
+	ClientSecret  types.String `tfsdk:"client_secret"`
+	TlsSkipVerify types.Bool   `tfsdk:"tls_skip_verify"`
 }
 
 // Metadata returns the provider type name.
@@ -74,6 +76,11 @@ func (p *omadaProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 				Description: "Client Secret for the Omada Controller Application. May also be provided via `OMADA_CLIENT_SECRET` environment variable.",
 				Optional:    true,
 				Sensitive:   true,
+			},
+			"tls_skip_verify": schema.BoolAttribute{
+				Description: `When set to true, accepts any certificate presented by the server and any host name in that certificate.
+				**It is unadvisable to use this in a production environment, as it makes the provider susceptible to man-in-the-middle attacks.**`,
+				Optional: true,
 			},
 		},
 	}
@@ -130,6 +137,15 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		)
 	}
 
+	if config.TlsSkipVerify.IsUnknown() {
+		resp.Diagnostics.AddAttributeError(
+			path.Root("tls_skip_verify"),
+			"Unknown value for tls_skip_verify",
+			"The provider cannot create the Omada API client as there is an unknown configuration value for the TLS verification. "+
+				"Either target apply the source of the value first, set the value statically in the configuration, or use the OMADA_TLS_SKIP_VERIFY environment variable.",
+		)
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -141,6 +157,9 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	controller_id := os.Getenv("OMADA_CONTROLLER_ID")
 	client_id := os.Getenv("OMADA_CLIENT_ID")
 	client_secret := os.Getenv("OMADA_CLIENT_SECRET")
+
+	// Read and parse the env variable as a boolean.
+	tls_skip_verify, parse_err := strconv.ParseBool(os.Getenv("OMADA_TLS_SKIP_VERIFY"))
 
 	if !config.Host.IsNull() {
 		host = config.Host.ValueString()
@@ -156,6 +175,10 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	if !config.ClientSecret.IsNull() {
 		client_secret = config.ClientSecret.ValueString()
+	}
+
+	if !config.TlsSkipVerify.IsNull() {
+		tls_skip_verify = config.TlsSkipVerify.ValueBool()
 	}
 
 	// If any of the expected configurations are missing, return
@@ -201,6 +224,11 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		)
 	}
 
+	// We don't need to add an error, we will just consider the tls_skip_verify as false
+	if parse_err != nil {
+		tls_skip_verify = false
+	}
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -215,8 +243,7 @@ func (p *omadaProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 	httpClient := &http.Client{
 		Transport: &http.Transport{
-			// TODO: Remove this when testing environment has SSL certification configured
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: tls_skip_verify},
 		},
 	}
 
